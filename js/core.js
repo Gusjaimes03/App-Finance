@@ -150,12 +150,13 @@
   }
 
   // ---------- estado ----------
+  const CAR_COLORS = ['#e63946', '#1d7bd8', '#f4a300', '#2a9d8f', '#8e44ad', '#ff6fa8', '#2b2d42', '#43aa8b', '#f3722c', '#577590'];
+
   function defaultState() {
-    const colors = ['#e63946', '#1d7bd8', '#f4a300', '#2a9d8f'];
     return {
       version: 1,
       settings: clone(DEFAULT_SETTINGS),
-      cars: colors.map((color, i) => ({ id: uid(), name: `Carro ${i + 1}`, color, active: true })),
+      cars: [], // el dueño agrega sus carros con el nombre de cada uno
       rentals: [],
       expenses: [],
       closures: {},
@@ -174,13 +175,51 @@
     return {
       version: 1,
       settings,
-      cars: Array.isArray(raw.cars) ? raw.cars.map((c) => Object.assign({ active: true }, c)) : base.cars,
+      cars: Array.isArray(raw.cars) ? raw.cars.map((c) => Object.assign({ active: true }, c)) : [],
       rentals: Array.isArray(raw.rentals)
         ? raw.rentals.map((r) => Object.assign({ charges: [], payments: [], writeOff: null }, r))
         : [],
       expenses: Array.isArray(raw.expenses) ? raw.expenses : [],
       closures: raw.closures && typeof raw.closures === 'object' ? raw.closures : {},
     };
+  }
+
+  // ---------- carros ----------
+  const CAR_NAME_MAX = 30;
+
+  function cleanCarName(name) {
+    return String(name || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function validateCarName(state, name, exceptId) {
+    const n = cleanCarName(name);
+    if (!n) throw new Error('Escribe el nombre del carro');
+    if (n.length > CAR_NAME_MAX) throw new Error(`El nombre puede tener máximo ${CAR_NAME_MAX} letras`);
+    const key = n.toLocaleLowerCase('es');
+    const dup = state.cars.find((c) => c.id !== exceptId && c.name.toLocaleLowerCase('es') === key);
+    if (dup) throw new Error(`Ya existe un carro llamado "${dup.name}"`);
+    return n;
+  }
+
+  /** Color sugerido para el siguiente carro (el primero de la paleta que no esté en uso). */
+  function nextCarColor(state) {
+    const used = new Set(state.cars.map((c) => String(c.color).toLowerCase()));
+    return CAR_COLORS.find((c) => !used.has(c)) || CAR_COLORS[state.cars.length % CAR_COLORS.length];
+  }
+
+  function addCar(state, { name, color } = {}) {
+    const car = { id: uid(), name: validateCarName(state, name), color: color || nextCarColor(state), active: true };
+    state.cars.push(car);
+    return car;
+  }
+
+  /** Cambia el nombre de un carro. Los alquileres en pista toman el nombre nuevo; el historial conserva el anterior. */
+  function renameCar(state, carId, name) {
+    const car = state.cars.find((c) => c.id === carId);
+    if (!car) throw new Error('Carro no encontrado');
+    car.name = validateCarName(state, name, carId);
+    for (const r of state.rentals) if (r.carId === carId && r.status === 'active') r.carName = car.name;
+    return car;
   }
 
   // ---------- precios y tiempos ----------
@@ -659,7 +698,13 @@
     isCash,
     kidsLabel,
     shortRef,
+    CAR_COLORS,
+    CAR_NAME_MAX,
     defaultState,
+    validateCarName,
+    nextCarColor,
+    addCar,
+    renameCar,
     normalizeState,
     blocksFor,
     rateFor,

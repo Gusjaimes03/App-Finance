@@ -8,6 +8,7 @@ const TODAY = C.dayKey(T0);
 
 function fresh() {
   const s = C.defaultState();
+  for (const name of ['Rayo', 'Ferrari rojo', 'Jeep rosado', 'Batimóvil']) C.addCar(s, { name });
   return s;
 }
 
@@ -171,5 +172,35 @@ test('normalizeState completa datos faltantes', () => {
   assert.equal(s.settings.prices[1], 12000);
   assert.equal(s.settings.prices[2], 15000);
   assert.deepEqual(s.rentals[0].charges, []);
-  assert.equal(s.cars.length, 4);
+  assert.deepEqual(s.cars, []);
+});
+
+test('la app arranca sin carros y se agregan por nombre', () => {
+  const s = C.defaultState();
+  assert.equal(s.cars.length, 0);
+  const car = C.addCar(s, { name: '  Rayo   McQueen ' });
+  assert.equal(car.name, 'Rayo McQueen');
+  assert.equal(car.active, true);
+  assert.ok(car.color);
+  const second = C.addCar(s, { name: 'Ferrari' });
+  assert.notEqual(second.color, car.color);
+  assert.throws(() => C.addCar(s, { name: '   ' }), /nombre/);
+  assert.throws(() => C.addCar(s, { name: 'rayo mcqueen' }), /Ya existe/);
+  assert.throws(() => C.addCar(s, { name: 'x'.repeat(31) }), /máximo/);
+});
+
+test('renombrar carro: valida y actualiza solo los alquileres en pista', () => {
+  const s = fresh();
+  const car = s.cars[0];
+  const old = C.createRental({ car, kids: 1, minutes: 10, now: T0, settings: s.settings });
+  C.finishRental(old, { now: T0 + 10 * MIN, settings: s.settings });
+  const live = C.createRental({ car, kids: 1, minutes: 10, now: T0 + 20 * MIN, settings: s.settings });
+  s.rentals.push(old, live);
+  C.renameCar(s, car.id, 'Rayo McQueen');
+  assert.equal(car.name, 'Rayo McQueen');
+  assert.equal(live.carName, 'Rayo McQueen');
+  assert.equal(old.carName, 'Rayo'); // el historial no cambia
+  C.renameCar(s, car.id, 'rayo mcqueen'); // mismo carro, solo cambia mayúsculas
+  assert.throws(() => C.renameCar(s, car.id, 'Ferrari rojo'), /Ya existe/);
+  assert.throws(() => C.renameCar(s, car.id, ''), /nombre/);
 });

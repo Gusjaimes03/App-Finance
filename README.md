@@ -12,6 +12,12 @@ Funciona sin internet, guarda los datos en el mismo dispositivo y se puede insta
 
 ## Cómo se usa
 
+### 0. Agregar tus carros por nombre
+La primera vez la app no tiene carros. En **Pista** toca **+ Agregar carro**, escribe el nombre de cada carro (por ejemplo *Rayo McQueen*, *Ferrari rojo*, *Jeep rosado*) y elige su color. Con **Agregar y seguir con otro** (o la tecla Enter) puedes registrar todos tus carros seguidos.
+- No se permiten dos carros con el mismo nombre.
+- Para cambiar el nombre o el color, toca el lápiz ✎ en la tarjeta del carro o ve a **Ajustes → Carros**.
+- Los reportes muestran lo producido por cada carro con su nombre. Si cambias un nombre, el historial anterior conserva el nombre que tenía.
+
 ### 1. Pista (operación diaria)
 1. Toca **Alquilar** en un carro disponible.
 2. Elige **1 o 2 niños** y el **tiempo** (10, 20, 30 o 60 minutos, u *Otro*). El total se calcula solo.
@@ -58,7 +64,7 @@ Elige un día o un rango (Hoy, Ayer, 7 días, Este mes):
 Valida los códigos con tu contador si los vas a llevar a la contabilidad formal.
 
 ### 4. Ajustes
-- Agregar, renombrar, cambiar el color, desactivar o eliminar carros.
+- Agregar carros por nombre, renombrarlos, cambiar el color, desactivarlos o eliminarlos.
 - Cambiar precios, minutos por bloque, tiempo mínimo, opciones de tiempo, tolerancia y alarma.
 - **Respaldo**: descarga un archivo `.json` con todos los datos y restáuralo en otro dispositivo. Hazlo seguido, porque si se borran los datos del navegador se pierde la información.
 

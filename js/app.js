@@ -228,21 +228,28 @@
     const strip = `<section class="kpis">
       ${kpi('En pista', activeMap.size)}
       ${kpi('Disponibles', Math.max(0, cars.length - activeMap.size))}
-      ${kpi('Viajes hoy', rep.rides, '', `${rep.kids} niños`)}
+      ${kpi('Viajes hoy', rep.rides, '', C.kidsLabel(rep.kids))}
       ${kpi('Recaudado hoy', money(rep.collected), 'good')}
       ${kpi('Por cobrar hoy', money(rep.pendingFromPeriod), rep.pendingFromPeriod ? 'bad' : '')}
     </section>`;
     if (!cars.length) {
-      return `${strip}<section class="empty"><p>No hay carros registrados.</p><button class="btn primary" data-action="go" data-view="ajustes">Agregar carros</button></section>`;
+      return `${strip}<section class="panel welcome">
+        ${CAR_SVG}
+        <h2>Agrega tus carros</h2>
+        <p class="sub">Registra cada carro con su nombre (por ejemplo: Rayo McQueen, Ferrari rojo, Jeep rosado) para llevar el tiempo y lo producido por cada uno.</p>
+        <button class="btn primary big" data-action="car-new">+ Agregar carro</button>
+      </section>`;
     }
-    return `${strip}<section class="car-grid">${cars.map((c) => carCard(c, activeMap.get(c.id))).join('')}</section>`;
+    return `${strip}<section class="car-grid">${cars.map((c) => carCard(c, activeMap.get(c.id))).join('')}
+      <button class="car-card add-tile" data-action="car-new"><span aria-hidden="true">+</span>Agregar carro</button>
+    </section>`;
   }
 
   function carCard(car, r) {
     const s = state.settings;
     if (!r) {
       return `<article class="car-card free" style="--car:${esc(car.color)}">
-        <header>${CAR_SVG}<h3>${esc(car.name)}</h3><span class="badge free">Disponible</span></header>
+        <header>${CAR_SVG}<h3>${esc(car.name)}</h3><span class="badge free">Disponible</span><button class="icon-btn edit" data-action="car-edit" data-id="${car.id}" aria-label="Editar ${esc(car.name)}" title="Cambiar nombre o color">✎</button></header>
         <div class="free-prices">
           <span>1 niño <b>${money(s.prices[1])}</b></span>
           <span>2 niños <b>${money(s.prices[2])}</b></span>
@@ -406,7 +413,7 @@
     <h2 class="report-title">Reporte contable · ${esc(state.settings.businessName)}<small>${rangeLabel(from, to)}</small></h2>
 
     <section class="kpis">
-      ${kpi('Producido (ventas)', money(rep.produced), '', `${rep.rides} viajes · ${rep.kids} niños`)}
+      ${kpi('Producido (ventas)', money(rep.produced), '', `${rep.rides} viajes · ${C.kidsLabel(rep.kids)}`)}
       ${kpi('Recaudado', money(rep.collected), 'good', `Efectivo ${money(rep.cashCollected)} · Digital ${money(rep.digitalCollected)}`)}
       ${kpi('Por cobrar', money(rep.pendingFromPeriod), rep.pendingFromPeriod ? 'bad' : '', `Cartera total ${money(rep.receivablesTotal)}`)}
       ${kpi('Gastos', money(rep.expensesTotal), '', `${rep.expenses.length} registros`)}
@@ -515,7 +522,7 @@
         const busy = activeRentals().some((r) => r.carId === c.id);
         return `<li class="car-row ${c.active ? '' : 'muted'}">
           <input type="color" value="${esc(c.color)}" data-change="car-color" data-id="${c.id}" aria-label="Color de ${esc(c.name)}">
-          <input type="text" value="${esc(c.name)}" maxlength="30" data-change="car-name" data-id="${c.id}" aria-label="Nombre del carro">
+          <input type="text" value="${esc(c.name)}" maxlength="${C.CAR_NAME_MAX}" data-change="car-name" data-id="${c.id}" aria-label="Nombre del carro">
           ${busy ? '<span class="badge pay-parcial">En pista</span>' : ''}
           ${
             c.active
@@ -530,12 +537,13 @@
     return `
     <section class="panel">
       <h2>Carros</h2>
-      <ul class="car-list">${carRows || '<li class="muted">Sin carros.</li>'}</ul>
-      <div class="add-car">
-        <input type="color" id="newCarColor" value="#8e44ad" aria-label="Color del nuevo carro">
-        <input type="text" id="newCarName" placeholder="Nombre del carro (ej. Carro 5, Ferrari rojo)" maxlength="30">
-        <button class="btn primary" data-action="car-add">Agregar carro</button>
-      </div>
+      <p class="sub">Escribe el nombre de cada carro. Puedes cambiar el nombre o el color tocándolo.</p>
+      <ul class="car-list">${carRows || '<li class="muted">Todavía no hay carros. Agrega el primero abajo.</li>'}</ul>
+      <form class="add-car" data-submit="car-add" novalidate>
+        <input type="color" name="color" value="${C.nextCarColor(state)}" aria-label="Color del nuevo carro">
+        <input type="text" name="name" placeholder="Nombre del carro (ej. Rayo McQueen)" maxlength="${C.CAR_NAME_MAX}" autocomplete="off" required>
+        <button type="submit" class="btn primary">Agregar carro</button>
+      </form>
     </section>
 
     <section class="panel">
@@ -685,6 +693,76 @@
         });
       },
     });
+  }
+
+  // ----- Agregar / editar carro
+  function openCarModal(car, { added = [] } = {}) {
+    const editing = Boolean(car);
+    const color = editing ? car.color : C.nextCarColor(state);
+    const palette = C.CAR_COLORS.includes(String(color).toLowerCase()) ? C.CAR_COLORS : [color, ...C.CAR_COLORS];
+    const busy = editing && activeRentals().some((r) => r.carId === car.id);
+    const body = `
+      ${added.length ? `<p class="added">Agregados: <strong>${added.map(esc).join(', ')}</strong></p>` : ''}
+      <label class="field">Nombre del carro
+        <input name="name" value="${editing ? esc(car.name) : ''}" maxlength="${C.CAR_NAME_MAX}" autocomplete="off" placeholder="Ej. Rayo McQueen, Ferrari rojo, Jeep rosado" required>
+      </label>
+      <fieldset class="swatches">
+        <legend>Color</legend>
+        ${palette
+          .map((c) => `<label style="--sw:${esc(c)}"><input type="radio" name="color" value="${esc(c)}" ${c.toLowerCase() === String(color).toLowerCase() ? 'checked' : ''}><span aria-label="${esc(c)}"></span></label>`)
+          .join('')}
+      </fieldset>
+      <p class="preview" data-role="preview" style="--car:${esc(color)}">${CAR_SVG}<strong></strong></p>
+      ${busy ? '<p class="sub">Este carro está en pista: el nombre nuevo se verá en el alquiler actual.</p>' : ''}`;
+    const actions = editing
+      ? [
+          { value: 'cancel', label: 'Cancelar' },
+          { value: 'save', label: 'Guardar', kind: 'primary' },
+        ]
+      : [
+          { value: 'another', label: 'Agregar y seguir con otro' },
+          { value: 'cancel', label: added.length ? 'Listo' : 'Cancelar' },
+          { value: 'add', label: 'Agregar carro', kind: 'primary' },
+        ];
+    openModal({
+      title: editing ? `Editar ${esc(car.name)}` : 'Agregar carro',
+      body,
+      actions,
+      onInput(form) {
+        const pv = form.querySelector('[data-role=preview]');
+        const picked = form.querySelector('[name=color]:checked');
+        pv.style.setProperty('--car', picked ? picked.value : color);
+        pv.querySelector('strong').textContent = form.elements.name.value.trim() || 'Nombre del carro';
+      },
+      onAction(value, form) {
+        const name = form.elements.name.value;
+        const picked = form.querySelector('[name=color]:checked');
+        const chosen = picked ? picked.value : color;
+        if (editing) {
+          return attempt(() => {
+            const before = car.name;
+            C.renameCar(state, car.id, name);
+            car.color = chosen;
+            commit();
+            toast(before === car.name ? 'Carro actualizado' : `"${before}" ahora se llama "${car.name}"`);
+          });
+        }
+        let created;
+        const ok = attempt(() => {
+          created = C.addCar(state, { name, color: chosen });
+          commit();
+        });
+        if (!ok) {
+          form.elements.name.focus();
+          return false;
+        }
+        if (value === 'another') setTimeout(() => openCarModal(null, { added: [...added, created.name] }), 0);
+        else toast(`${created.name} agregado`);
+        return true;
+      },
+    });
+    // En móvil también enfocar el nombre al agregar, para escribir de una vez.
+    if (!editing) $('#modalForm [name=name]').focus();
   }
 
   // ----- Agregar tiempo
@@ -989,11 +1067,10 @@
       commit();
       toast(v.counted === null ? 'Base de caja guardada' : 'Cierre de caja guardado');
     },
-    'car-add': () => {
-      const name = $('#newCarName').value.trim() || `Carro ${state.cars.length + 1}`;
-      state.cars.push({ id: C.uid(), name, color: $('#newCarColor').value, active: true });
-      commit();
-      toast(`${name} agregado`);
+    'car-new': () => openCarModal(null),
+    'car-edit': (d) => {
+      const car = state.cars.find((c) => c.id === d.id);
+      if (car) openCarModal(car);
     },
     'car-toggle': (d) => {
       const car = state.cars.find((c) => c.id === d.id);
@@ -1084,12 +1161,14 @@
     'car-name': (el) => {
       const car = state.cars.find((c) => c.id === el.dataset.id);
       if (!car) return;
-      car.name = el.value.trim() || car.name;
-      // los alquileres en curso muestran el nombre nuevo; el historial conserva el anterior
-      activeRentals()
-        .filter((r) => r.carId === car.id)
-        .forEach((r) => (r.carName = car.name));
+      const before = car.name;
+      const ok = attempt(() => C.renameCar(state, car.id, el.value));
+      if (!ok) {
+        el.value = before;
+        return;
+      }
       commit();
+      if (before !== car.name) toast(`"${before}" ahora se llama "${car.name}"`);
     },
     'car-color': (el) => {
       const car = state.cars.find((c) => c.id === el.dataset.id);
@@ -1142,6 +1221,25 @@
   document.addEventListener('input', (e) => {
     const el = e.target.closest('[data-input]');
     if (el && inputs[el.dataset.input]) inputs[el.dataset.input](el);
+  });
+  const submits = {
+    'car-add': (form) => {
+      const name = form.elements.name;
+      const ok = attempt(() => {
+        const car = C.addCar(state, { name: name.value, color: form.elements.color.value });
+        commit();
+        toast(`${car.name} agregado`);
+      });
+      const input = $('form[data-submit=car-add] [name=name]');
+      if (input) input.focus();
+      if (!ok) name.focus();
+    },
+  };
+  document.addEventListener('submit', (e) => {
+    const form = e.target.closest('form[data-submit]');
+    if (!form) return;
+    e.preventDefault();
+    if (submits[form.dataset.submit]) submits[form.dataset.submit](form);
   });
   document.addEventListener('pointerdown', unlockAudio, { passive: true });
   document.addEventListener('visibilitychange', () => {

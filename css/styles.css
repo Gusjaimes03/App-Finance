@@ -389,3 +389,34 @@ dialog form { display: flex; flex-direction: column; max-height: calc(100dvh - 2
   .no-break { break-inside: avoid; }
   .table-wrap { overflow: visible; }
 }
+
+/* ---------- carros: agregar / editar ---------- */
+.welcome { text-align: center; padding: 28px 16px; display: grid; justify-items: center; gap: 8px; }
+.welcome .car-icon { width: 96px; height: 60px; color: var(--primary); }
+.welcome .btn { max-width: 320px; }
+.add-tile {
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  border: 2px dashed var(--border);
+  border-top: 2px dashed var(--border);
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.add-tile span { font-size: 2.6rem; line-height: 1; color: var(--primary); }
+.add-tile:hover { border-color: var(--primary); color: var(--primary); }
+.car-card header .icon-btn.edit { font-size: 1.15rem; padding: 4px 6px; }
+.swatches { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.swatches legend { font-size: .88rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; padding: 0; }
+.swatches label { position: relative; }
+.swatches input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.swatches span { display: block; width: 38px; height: 38px; border-radius: 50%; background: var(--sw); border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--border); cursor: pointer; }
+.swatches input:checked + span { box-shadow: 0 0 0 3px var(--text); }
+.swatches input:focus-visible + span { outline: 3px solid var(--primary); outline-offset: 3px; }
+.preview { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px; border-radius: 12px; background: var(--surface-2); border-top: 6px solid var(--car); font-size: 1.15rem; }
+.preview .car-icon { color: var(--car); }
+.added { padding: 8px 12px; border-radius: 10px; background: var(--good-bg); color: var(--good); }
