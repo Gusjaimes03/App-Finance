@@ -1,0 +1,11 @@
+{
+  "name": "carritos-kids",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Control de alquiler de carros para niños: cronómetro, pagos y contabilidad diaria.",
+  "scripts": {
+    "test": "TZ=America/Bogota node --test tests/*.test.js",
+    "start": "npx --yes serve -l 8080 ."
+  },
+  "license": "MIT"
+}

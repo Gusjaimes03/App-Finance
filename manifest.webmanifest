@@ -1,0 +1,15 @@
+{
+  "name": "Carritos Kids · Control de alquiler",
+  "short_name": "Carritos Kids",
+  "description": "Cronómetro por carro, pagos y contabilidad diaria del alquiler de carros para niños.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f3f6fa",
+  "theme_color": "#1d7bd8",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
