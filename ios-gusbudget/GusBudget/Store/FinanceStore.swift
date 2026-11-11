@@ -11,6 +11,13 @@ final class FinanceStore: ObservableObject {
     private let persistencia: Persistencia
 
     init(persistencia: Persistencia = .shared) {
+        // Con -datosDeEjemplo 1 la app arranca con datos de mentira en su propio
+        // archivo, sin tocar los reales. Sirve para las capturas automáticas.
+        if UserDefaults.standard.bool(forKey: "datosDeEjemplo") {
+            self.persistencia = Persistencia(nombre: "ejemplo.json")
+            self.data = Semilla.ejemplo()
+            return
+        }
         self.persistencia = persistencia
         self.data = persistencia.cargar() ?? AppData()
     }

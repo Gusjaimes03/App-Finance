@@ -169,3 +169,99 @@ enum Semilla {
     /// Fuentes que se ofrecen al registrar un ingreso extra.
     static let fuentesExtra = ["Clase particular", "Venta", "Regalo", "Reembolso", "Trabajo extra", "Otro"]
 }
+
+// MARK: - Datos de ejemplo (solo para capturas y pruebas visuales)
+
+extension Semilla {
+    /// Un mes con movimientos, pagos hechos y cajitas con plata,
+    /// para ver cómo se ven las pantallas llenas.
+    static func ejemplo() -> AppData {
+        let hoy = Date()
+        let mes = hoy.inicioDeMes
+
+        func dia(_ numero: Int) -> Date {
+            mes.sumandoDias(max(0, numero - 1))
+        }
+
+        func gasto(_ monto: Decimal, _ cat: String, _ nota: String, _ numero: Int, _ hora: String, _ metodo: MetodoPago = .debito) -> Gasto {
+            Gasto(monto: monto, cat: cat, metodo: metodo, nota: nota, fecha: dia(numero), hora: hora, creado: dia(numero))
+        }
+
+        var datos = AppData(
+            inicio: mes,
+            gastos: [
+                gasto(12_000, "comida", "Onces", 2, "15:10"),
+                gasto(9_000, "comida", "Onces", 4, "14:40"),
+                gasto(9_500, "comida", "Onces", 6, "15:30"),
+                gasto(38_000, "comida", "Mercado", 3, "11:20"),
+                gasto(120_000, "comida", "Mercado del mes", 7, "10:05"),
+                gasto(60_000, "gasolina", "Tanqueada", 2, "07:40"),
+                gasto(60_000, "gasolina", "Tanqueada", 8, "08:15"),
+                gasto(45_000, "salidas", "Cine con Dani", 5, "20:10"),
+                gasto(85_000, "salidas", "Almuerzo del domingo", 9, "13:20"),
+                gasto(18_000, "transporte", "Taxi al centro", 4, "18:50"),
+                gasto(32_000, "mascota", "Comida de Morita", 6, "17:00"),
+                gasto(54_000, "hogar", "Aseo", 7, "16:30"),
+                gasto(70_000, "salud", "Farmacia", 8, "09:30", .credito),
+                gasto(25_000, "comida", "Almuerzo", 9, "12:40"),
+                gasto(15_000, "comida", "Onces", 9, "15:05")
+            ],
+            cajitas: cajitas,
+            deudas: deudas
+        )
+
+        datos.agenda = [
+            AgendaItem(
+                tipo: .ingreso, nombre: "Comfacasanare (quincena del 15)", monto: 1_400_000,
+                fecha: dia(20), fechaTexto: "~16-20 nov", simbolo: "building.2.fill"
+            ),
+            AgendaItem(
+                tipo: .ingreso, nombre: "Unitrópico", monto: 3_800_000,
+                fecha: dia(30), fechaTexto: "~30 nov", simbolo: "graduationcap.fill"
+            ),
+            AgendaItem(
+                tipo: .ingreso, nombre: "CLI", monto: 824_600, fecha: dia(10),
+                hecho: true, hechoMonto: 824_600, hechoFecha: dia(10),
+                simbolo: "person.fill.checkmark"
+            ),
+            AgendaItem(
+                tipo: .ingreso, nombre: "Comfacasanare (quincena del 30)", monto: 1_400_000,
+                fecha: dia(2), hecho: true, hechoMonto: 1_142_255, hechoFecha: dia(2),
+                simbolo: "building.2.fill"
+            ),
+            AgendaItem(
+                tipo: .pago, nombre: "Matrícula del semestre", monto: 489_000,
+                fecha: dia(14), simbolo: "graduationcap.fill"
+            ),
+            AgendaItem(
+                tipo: .ingreso, nombre: "Clase particular", monto: 120_000, fecha: dia(6),
+                hecho: true, hechoMonto: 120_000, hechoFecha: dia(6),
+                extra: true, fuente: "Clase particular", simbolo: "plus.circle.fill"
+            ),
+            AgendaItem(
+                tipo: .ingreso, nombre: "Mamá", monto: 500_000, porCobrar: true,
+                persona: "Mamá", montoOriginal: 1_000_000, simbolo: "heart.fill"
+            ),
+            AgendaItem(
+                tipo: .ingreso, nombre: "2 estudiantes de CLI", monto: 235_600, porCobrar: true,
+                persona: "Estudiantes CLI", montoOriginal: 235_600, simbolo: "person.2.fill"
+            )
+        ]
+
+        datos.pagosFijos = [
+            PagoFijo(fijoId: "servicios", periodo: mes.clavePeriodo, monto: 150_000,
+                     fecha: dia(5), presupuesto: 200_000)
+        ]
+
+        datos.cajitas = [
+            Cajita(nombre: "Arriendo de noviembre", meta: 1_000_000, guardado: 650_000,
+                   para: "arriendo", colorHex: "2c56e0", orden: 0),
+            Cajita(nombre: "Colchón enero y febrero", meta: 4_400_000, guardado: 300_000,
+                   colorHex: "0f766e", orden: 1, nota: "Esos meses no hay Comfacasanare"),
+            Cajita(nombre: "SOAT del carro (marzo)", meta: 1_121_400, guardado: 1_121_400,
+                   colorHex: "c2410c", orden: 2)
+        ]
+
+        return datos
+    }
+}

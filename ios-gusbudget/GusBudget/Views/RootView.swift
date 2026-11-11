@@ -7,9 +7,21 @@ struct RootView: View {
 
     enum Pestana: Hashable {
         case inicio, movimientos, presupuesto, pagos, balance
+
+        /// Permite abrir la app en una pestaña concreta con -pestana <nombre>.
+        /// Lo usan las capturas automáticas; en uso normal siempre es Inicio.
+        static var inicial: Pestana {
+            switch UserDefaults.standard.string(forKey: "pestana") {
+            case "movimientos": return .movimientos
+            case "presupuesto": return .presupuesto
+            case "pagos": return .pagos
+            case "balance": return .balance
+            default: return .inicio
+            }
+        }
     }
 
-    @State private var pestana: Pestana = .inicio
+    @State private var pestana: Pestana = .inicial
 
     var body: some View {
         ZStack(alignment: .bottom) {
