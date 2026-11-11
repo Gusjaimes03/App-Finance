@@ -71,7 +71,8 @@ struct FilaObligacion: View {
                     Text(obligacion.nombre)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Theme.texto)
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                     if let etiqueta = obligacion.estado.etiqueta {
                         Text(etiqueta)
                             .font(.system(size: 9, weight: .bold))

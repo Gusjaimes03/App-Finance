@@ -67,7 +67,7 @@ struct InicioView: View {
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(.white.opacity(0.8))
                 Spacer()
-                Text(Fmt.encabezadoDia(Date()))
+                Text(Fmt.diaYMes(Date()))
                     .font(.caption2)
                     .foregroundStyle(.white.opacity(0.55))
             }

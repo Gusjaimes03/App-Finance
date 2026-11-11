@@ -61,13 +61,13 @@ struct PresupuestoView: View {
 
     private var tabla: some View {
         VStack(spacing: 10) {
-            HStack {
+            HStack(spacing: 8) {
                 Text("")
                 Spacer()
                 Text("Presupuesto")
-                    .frame(width: 92, alignment: .trailing)
+                    .frame(width: 96, alignment: .trailing)
                 Text("Real hasta hoy")
-                    .frame(width: 92, alignment: .trailing)
+                    .frame(width: 96, alignment: .trailing)
             }
             .font(.system(size: 10, weight: .semibold))
             .foregroundStyle(Theme.gris)
@@ -97,7 +97,7 @@ struct PresupuestoView: View {
 
             Divider()
 
-            HStack {
+            HStack(spacing: 8) {
                 Text(resumen.resultadoPresupuesto >= 0 ? "Te debería sobrar" : "Te faltaría")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.texto)
@@ -105,11 +105,15 @@ struct PresupuestoView: View {
                 Text(Fmt.plata(abs(resumen.resultadoPresupuesto)))
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(resumen.resultadoPresupuesto >= 0 ? Theme.verde : Theme.rojo)
-                    .frame(width: 92, alignment: .trailing)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(width: 96, alignment: .trailing)
                 Text(Fmt.plata(resumen.resultadoReal))
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(resumen.resultadoReal >= 0 ? Theme.verde : Theme.rojo)
-                    .frame(width: 92, alignment: .trailing)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(width: 96, alignment: .trailing)
             }
 
             if let tardio = store.sueldoTardio(mes: mes) {
@@ -123,7 +127,7 @@ struct PresupuestoView: View {
     }
 
     private func fila(_ titulo: String, _ presupuesto: Decimal, _ real: Decimal, negativo: Bool = false) -> some View {
-        HStack {
+        HStack(spacing: 8) {
             Text(titulo)
                 .font(.caption)
                 .foregroundStyle(Theme.texto)
@@ -132,13 +136,13 @@ struct PresupuestoView: View {
             Text((negativo && presupuesto > 0 ? "−" : "") + Fmt.plata(presupuesto))
                 .font(.caption.weight(.medium))
                 .foregroundStyle(Theme.texto)
-                .frame(width: 92, alignment: .trailing)
+                .frame(width: 96, alignment: .trailing)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             Text((negativo && real > 0 ? "−" : "") + Fmt.plata(real))
                 .font(.caption.weight(.medium))
                 .foregroundStyle(Theme.gris)
-                .frame(width: 92, alignment: .trailing)
+                .frame(width: 96, alignment: .trailing)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
         }
