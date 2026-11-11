@@ -41,8 +41,10 @@ Lo único que **no** viene es el histórico de lo ya recibido y pagado: eso se r
 
 Dos caminos, explicados paso a paso en **[docs/INSTALAR-EN-IPHONE.md](docs/INSTALAR-EN-IPHONE.md)**:
 
-1. **Con un Mac**: abrir `GusBudget.xcodeproj`, elegir tu Apple ID en *Signing & Capabilities*,
-   conectar el iPhone y darle a ▶︎. La firma gratuita dura 7 días.
+1. **Con un Mac**: con el iPhone conectado y tu Apple ID ya en Xcode, basta con
+   `./tools/instalar-en-iphone.sh`, que compila, firma, instala y abre la app.
+   También se puede a mano: abrir `GusBudget.xcodeproj`, elegir el equipo en
+   *Signing & Capabilities* y darle a ▶︎. La firma gratuita dura 7 días.
 2. **Sin Mac**: cada push compila la app en un Mac de GitHub Actions y deja un
    `.ipa` **sin firmar** como artefacto. Ese archivo se instala desde Windows o Mac con
    **AltStore** o **Sideloadly**, que lo firman con tu propio Apple ID y lo renuevan solos.

@@ -17,8 +17,34 @@ y hay que renovarla. La diferencia es que AltStore y Sideloadly pueden renovarla
 
 ### 2. Bajar el proyecto
 ```bash
-git clone https://github.com/Gusjaimes03/App-Finance.git
-cd App-Finance/ios-gusbudget
+git clone --branch claude/gusbudget-income-expenses-app-u3pb6j \
+  https://github.com/Gusjaimes03/App-Finance.git ~/GusBudget
+cd ~/GusBudget/ios-gusbudget
+```
+
+> La rama importa: la rama por defecto del repositorio es la de la app de los carros
+> y ahí no está la carpeta `ios-gusbudget`.
+
+### 2.1 Atajo: un solo comando
+
+Si ya tienes tu Apple ID en Xcode (paso 3) y el iPhone conectado, esto compila,
+firma e instala sin tocar la interfaz:
+
+```bash
+./tools/instalar-en-iphone.sh
+```
+
+El script busca solo tu Team ID y el iPhone emparejado, compila, firma, instala y abre
+la app. Si el identificador está ocupado, se le pasa otro:
+
+```bash
+BUNDLE_ID=com.tunombre.miplata ./tools/instalar-en-iphone.sh
+```
+
+Para renovar a los 7 días es el mismo comando. Si prefieres hacerlo a mano, sigue leyendo.
+
+### 2.2 Abrir el proyecto en Xcode
+```bash
 open GusBudget.xcodeproj
 ```
 
@@ -43,8 +69,8 @@ open GusBudget.xcodeproj
 3. Vuelve a pulsar **▶︎**. Listo, ya puedes desconectar el cable.
 
 ### 6. Renovar cada 7 días
-Conecta el iPhone (o usa Wi-Fi si lo emparejaste en *Window › Devices and Simulators*),
-abre el proyecto y pulsa **▶︎**. Otros 7 días.
+Conecta el iPhone y corre `./tools/instalar-en-iphone.sh`, o abre el proyecto y pulsa **▶︎**.
+Otros 7 días.
 
 **Tus datos se conservan** mientras no borres la app del iPhone. Si la borras, se van con ella.
 
