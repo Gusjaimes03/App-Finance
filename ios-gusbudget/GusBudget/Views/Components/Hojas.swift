@@ -10,6 +10,9 @@ struct SolicitudValor: Identifiable {
     var accion: (Decimal, Date) -> Void
 }
 
+// MARK: - Hoja de valor real
+
+/// Hoja "¿Cuánto pagaste de verdad?": cifra grande centrada, fecha y botón principal.
 struct HojaValorReal: View {
     let solicitud: SolicitudValor
 
@@ -17,15 +20,41 @@ struct HojaValorReal: View {
     @State private var texto = ""
     @State private var fecha = Date()
 
+    private var valor: Decimal? { Fmt.leerPlata(texto) }
+
     var body: some View {
         NavigationStack {
-            Form {
-                Section(solicitud.pregunta) {
-                    CampoPlata(texto: $texto, alineacion: .trailing)
+            ScrollView {
+                VStack(spacing: Espacio.l) {
+                    VStack(spacing: Espacio.xs) {
+                        Text(solicitud.pregunta)
+                            .font(.headline)
+                            .foregroundStyle(Theme.gris)
+                            .multilineTextAlignment(.center)
+                        CampoPlata(texto: $texto, grande: true, alineacion: .center,
+                                   etiqueta: solicitud.pregunta, enfocarAlAparecer: true)
+                    }
+                    .padding(.top, Espacio.xs)
+
                     DatePicker("Fecha", selection: $fecha, displayedComponents: .date)
                         .environment(\.locale, Fmt.locale)
+                        .font(.body)
+                        .padding(.horizontal, Espacio.m)
+                        .frame(minHeight: 52)
+                        .background(
+                            RoundedRectangle(cornerRadius: Radio.campo, style: .continuous)
+                                .fill(Theme.hundido)
+                        )
+
+                    Button("Guardar") { guardar() }
+                        .buttonStyle(.principal)
+                        .disabled(valor == nil)
                 }
+                .padding(.horizontal, Espacio.margen)
+                .padding(.bottom, Espacio.xl)
             }
+            .scrollDismissesKeyboard(.interactively)
+            .background(Theme.elevada.ignoresSafeArea())
             .navigationTitle(solicitud.titulo)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -33,14 +62,9 @@ struct HojaValorReal: View {
                     Button("Cancelar") { cerrar() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Guardar") {
-                        if let valor = Fmt.leerPlata(texto) {
-                            solicitud.accion(valor, fecha)
-                        }
-                        cerrar()
-                    }
-                    .fontWeight(.semibold)
-                    .disabled(Fmt.leerPlata(texto) == nil)
+                    Button("Guardar") { guardar() }
+                        .fontWeight(.semibold)
+                        .disabled(valor == nil)
                 }
             }
             .onAppear {
@@ -48,71 +72,144 @@ struct HojaValorReal: View {
                 fecha = solicitud.fechaSugerida
             }
         }
-        .presentationDetents([.height(260)])
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func guardar() {
+        if let valor { solicitud.accion(valor, fecha) }
+        cerrar()
     }
 }
 
-/// Fila de un pago o ingreso pendiente.
+// MARK: - Fila de obligación
+
+/// Fila de un pago o ingreso pendiente, estilo Recordatorios: check circular a la izquierda,
+/// nombre y fecha al centro, valor a la derecha.
+/// Dentro de una `List` funcionan los deslizamientos; en cualquier contenedor funciona el menú contextual.
 struct FilaObligacion: View {
     let obligacion: Obligacion
     var alHacer: () -> Void
     var alQuitar: (() -> Void)?
 
-    var body: some View {
-        HStack(spacing: 11) {
-            IconoCuadro(
-                simbolo: obligacion.simbolo,
-                color: obligacion.tipo == .ingreso ? Theme.verde : Theme.acento,
-                lado: 36
-            )
+    private var esPago: Bool { obligacion.tipo == .pago }
+    private var textoAccion: String { esPago ? "Ya pagué" : "Ya me llegó" }
 
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
+    private var tonoEstado: Tono {
+        obligacion.estado == .vencido ? .negativo : .aviso
+    }
+
+    var body: some View {
+        HStack(spacing: Espacio.s) {
+            BotonCheck(color: esPago ? Theme.acento : Theme.verde,
+                       etiqueta: "\(textoAccion): \(obligacion.nombre)",
+                       accion: alHacer)
+                .padding(.leading, -6)
+
+            VStack(alignment: .leading, spacing: 3) {
+                // El estado ("Pronto", "Vencido") va junto al nombre para que la fecha tenga toda la línea.
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(obligacion.nombre)
-                        .font(.subheadline.weight(.medium))
+                        .font(.body.weight(.medium))
                         .foregroundStyle(Theme.texto)
-                        .lineLimit(1)
+                        .lineLimit(2)
                     if let etiqueta = obligacion.estado.etiqueta {
-                        Text(etiqueta)
-                            .font(.system(size: 9, weight: .bold))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(
-                                Capsule().fill(obligacion.estado == .vencido
-                                               ? Theme.rojo.opacity(0.15)
-                                               : Theme.sol.opacity(0.25))
-                            )
-                            .foregroundStyle(obligacion.estado == .vencido ? Theme.rojo : Theme.ambar)
+                        Insignia(texto: etiqueta, tono: tonoEstado)
+                            .fixedSize()
+                            .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] + 4 }
                     }
                 }
                 Text(obligacion.fechaMostrada)
-                    .font(.caption2)
+                    .font(.subheadline)
                     .foregroundStyle(Theme.gris)
-            }
-
-            Spacer(minLength: 4)
-
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(obligacion.monto > 0 ? Fmt.plata(obligacion.monto) : "Sin valor")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.texto)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    .minimumScaleFactor(0.85)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-                Button(obligacion.tipo == .pago ? "Ya pagué" : "Ya me llegó", action: alHacer)
-                    .font(.caption.weight(.semibold))
-                    .buttonStyle(.borderedProminent)
-                    .tint(obligacion.tipo == .pago ? Theme.acento : Theme.verde)
-                    .controlSize(.small)
+            Group {
+                if obligacion.monto > 0 {
+                    CifraPlata(valor: obligacion.monto, estilo: .normal,
+                               signo: esPago ? .ninguno : .entrada)
+                } else {
+                    Text("Sin valor")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.grisClaro)
+                }
+            }
+            .layoutPriority(1)
+        }
+        .padding(.vertical, Espacio.xs)
+        .contentShape(Rectangle())
+        .contextMenu {
+            Button(action: alHacer) {
+                Label(textoAccion, systemImage: "checkmark.circle")
+            }
+            if let alQuitar {
+                Button(role: .destructive, action: alQuitar) {
+                    Label("Borrar", systemImage: "trash")
+                }
             }
         }
-        .padding(.vertical, 4)
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            Button(action: alHacer) {
+                Label(textoAccion, systemImage: "checkmark")
+            }
+            .tint(esPago ? Theme.acento : Theme.verde)
+        }
         .swipeActions(edge: .trailing) {
             if let alQuitar {
                 Button(role: .destructive, action: alQuitar) {
-                    Label("Quitar", systemImage: "trash")
+                    Label("Borrar", systemImage: "trash")
                 }
             }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityAction(named: textoAccion, alHacer)
+    }
+}
+
+// MARK: - Hoja de registro
+
+/// Hoja que envuelve `RegistrarView` para registrar desde el botón flotante.
+/// Se cierra sola cuando se guarda un gasto o un ingreso.
+struct HojaRegistrar: View {
+    @EnvironmentObject private var store: FinanceStore
+    @Environment(\.dismiss) private var cerrar
+
+    @State private var gastosAlAbrir = 0
+    @State private var agendaAlAbrir = 0
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                RegistrarView()
+                    .padding(.horizontal, Espacio.m)
+                    .padding(.top, Espacio.xs)
+                    .padding(.bottom, Espacio.xl)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .background(Theme.fondo.ignoresSafeArea())
+            .navigationTitle("Registrar")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cerrar") { cerrar() }
+                }
+            }
+        }
+        .environment(\.alTerminarRegistro, { cerrar() })
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+        .onAppear {
+            gastosAlAbrir = store.data.gastos.count
+            agendaAlAbrir = store.data.agenda.count
+        }
+        .onChange(of: store.data.gastos.count) { nuevo in
+            if nuevo > gastosAlAbrir { cerrar() }
+        }
+        .onChange(of: store.data.agenda.count) { nuevo in
+            if nuevo > agendaAlAbrir { cerrar() }
         }
     }
 }

@@ -34,9 +34,13 @@
 		63E09EB9ED62AF189EA11A8F /* RegistrarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83519391186FAAD999B9115C /* RegistrarView.swift */; };
 		E24C7692F7111138C13A0B36 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEF713CB3A0456307DA1C394 /* RootView.swift */; };
 		234937A3769A6AB75393B734 /* Basicos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C12423BF70EBE17C5BA63F3 /* Basicos.swift */; };
+		90140A170E4B54840DBA1A53 /* Botones.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C317AFA00E3AA045751B15E /* Botones.swift */; };
 		AFC7D21B6033575EF3965D03 /* Compartir.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5302D18979DE80C5C42DC19B /* Compartir.swift */; };
+		0D37DB7639C684103343C5D0 /* Entorno.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D2B616F425A96B3486457C6 /* Entorno.swift */; };
+		8A9F0709D76ED060D3A2C2AC /* GaleriaDiseno.swift in Sources */ = {isa = PBXBuildFile; fileRef = 003D6427157BB7A2C8D52DEF /* GaleriaDiseno.swift */; };
 		D98EB122129BE74923FB4784 /* Graficas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 414E05A930E5D2C4831BD8E8 /* Graficas.swift */; };
 		7559770644B2DF5E3782E05B /* Hojas.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE1190C9892B21E63AB600B3 /* Hojas.swift */; };
+		7C2A653752A396E8D4D12DFC /* Tarjetas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 923F7BAF9984CD6DBA0C6B24 /* Tarjetas.swift */; };
 		DACC721E6EACD5AD899DE119 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 812CC35BC89104296B240C1A /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -63,9 +67,13 @@
 		B5834DEE6CFCF58B17E495A0 /* AjustesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AjustesView.swift; sourceTree = "<group>"; };
 		58273A5CEF6885BA025A3157 /* BalanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalanceView.swift; sourceTree = "<group>"; };
 		2C12423BF70EBE17C5BA63F3 /* Basicos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Basicos.swift; sourceTree = "<group>"; };
+		2C317AFA00E3AA045751B15E /* Botones.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Botones.swift; sourceTree = "<group>"; };
 		5302D18979DE80C5C42DC19B /* Compartir.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Compartir.swift; sourceTree = "<group>"; };
+		2D2B616F425A96B3486457C6 /* Entorno.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entorno.swift; sourceTree = "<group>"; };
+		003D6427157BB7A2C8D52DEF /* GaleriaDiseno.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GaleriaDiseno.swift; sourceTree = "<group>"; };
 		414E05A930E5D2C4831BD8E8 /* Graficas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Graficas.swift; sourceTree = "<group>"; };
 		BE1190C9892B21E63AB600B3 /* Hojas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hojas.swift; sourceTree = "<group>"; };
+		923F7BAF9984CD6DBA0C6B24 /* Tarjetas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tarjetas.swift; sourceTree = "<group>"; };
 		8652D9177325C982DD9C9381 /* HojaGasto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HojaGasto.swift; sourceTree = "<group>"; };
 		41E3BDFA3B4AABB2D892BA3F /* InicioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InicioView.swift; sourceTree = "<group>"; };
 		B618BBCAE02FC14B8C4B06EC /* MovimientosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovimientosView.swift; sourceTree = "<group>"; };
@@ -173,9 +181,13 @@
 			isa = PBXGroup;
 			children = (
 				2C12423BF70EBE17C5BA63F3 /* Basicos.swift */,
+				2C317AFA00E3AA045751B15E /* Botones.swift */,
 				5302D18979DE80C5C42DC19B /* Compartir.swift */,
+				2D2B616F425A96B3486457C6 /* Entorno.swift */,
+				003D6427157BB7A2C8D52DEF /* GaleriaDiseno.swift */,
 				414E05A930E5D2C4831BD8E8 /* Graficas.swift */,
 				BE1190C9892B21E63AB600B3 /* Hojas.swift */,
+				923F7BAF9984CD6DBA0C6B24 /* Tarjetas.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -277,9 +289,13 @@
 				63E09EB9ED62AF189EA11A8F /* RegistrarView.swift in Sources */,
 				E24C7692F7111138C13A0B36 /* RootView.swift in Sources */,
 				234937A3769A6AB75393B734 /* Basicos.swift in Sources */,
+				90140A170E4B54840DBA1A53 /* Botones.swift in Sources */,
 				AFC7D21B6033575EF3965D03 /* Compartir.swift in Sources */,
+				0D37DB7639C684103343C5D0 /* Entorno.swift in Sources */,
+				8A9F0709D76ED060D3A2C2AC /* GaleriaDiseno.swift in Sources */,
 				D98EB122129BE74923FB4784 /* Graficas.swift in Sources */,
 				7559770644B2DF5E3782E05B /* Hojas.swift in Sources */,
+				7C2A653752A396E8D4D12DFC /* Tarjetas.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
