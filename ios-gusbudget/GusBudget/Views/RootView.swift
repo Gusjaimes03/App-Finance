@@ -24,7 +24,9 @@ struct RootView: View {
         var inicial = Pestana.inicio
         #if DEBUG
         // Para capturas: xcrun simctl launch booted com.gusjaimes.GusBudget -pestanaInicial pagos
-        if let valor = UserDefaults.standard.string(forKey: "pestanaInicial"),
+        // (las capturas de GitHub Actions usan -pestana pagos).
+        let defaults = UserDefaults.standard
+        if let valor = defaults.string(forKey: "pestanaInicial") ?? defaults.string(forKey: "pestana"),
            let elegida = Pestana(rawValue: valor) {
             inicial = elegida
         }
