@@ -71,8 +71,34 @@ enum Semilla {
 
     // MARK: Ingresos esperados y cobros
 
+    // MARK: Saldo inicial
+
+    /// Id fijo para reconocer el saldo inicial y no cargarlo dos veces.
+    static let saldoInicialId = UUID(uuidString: "6D1E2F00-0000-4000-8000-000000069355")!
+
+    /// Lo que había el 10 de noviembre (prueba 1 de la especificación):
+    /// entró $1.966.855, se pagó $1.489.000 y se gastó $408.500 con débito.
+    /// Es un ajuste, así que no cuenta como sueldo.
+    static var saldoInicial: AgendaItem {
+        AgendaItem(
+            id: saldoInicialId,
+            tipo: .ingreso,
+            nombre: "Saldo inicial (cuadre con el banco)",
+            monto: 69_355,
+            fecha: inicio,
+            nota: "Entró $ 1.966.855, pagaste $ 1.489.000 y gastaste $ 408.500 con débito antes de empezar a registrar.",
+            hecho: true,
+            hechoMonto: 69_355,
+            hechoFecha: inicio,
+            ajuste: true,
+            creado: inicio,
+            simbolo: "building.columns.fill"
+        )
+    }
+
     static var agenda: [AgendaItem] {
         [
+            saldoInicial,
             AgendaItem(
                 tipo: .ingreso,
                 nombre: "Comfacasanare (quincena del 15)",

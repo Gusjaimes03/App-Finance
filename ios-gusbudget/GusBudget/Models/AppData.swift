@@ -7,11 +7,15 @@ struct Ajustes: Codable, Hashable {
     var recordatorioFirma: Bool
     /// Pedir Face ID o código al abrir.
     var bloqueoActivo: Bool
+    /// Ya se cargó una vez el saldo inicial de la especificación (si lo borra, no vuelve).
+    var saldoInicialCargado: Bool
 
-    init(ultimaFirma: Date? = nil, recordatorioFirma: Bool = false, bloqueoActivo: Bool = false) {
+    init(ultimaFirma: Date? = nil, recordatorioFirma: Bool = false, bloqueoActivo: Bool = false,
+         saldoInicialCargado: Bool = false) {
         self.ultimaFirma = ultimaFirma
         self.recordatorioFirma = recordatorioFirma
         self.bloqueoActivo = bloqueoActivo
+        self.saldoInicialCargado = saldoInicialCargado
     }
 
     init(from decoder: Decoder) throws {
@@ -19,6 +23,7 @@ struct Ajustes: Codable, Hashable {
         ultimaFirma = try c.decodeIfPresent(Date.self, forKey: .ultimaFirma)
         recordatorioFirma = try c.decodeIfPresent(Bool.self, forKey: .recordatorioFirma) ?? false
         bloqueoActivo = try c.decodeIfPresent(Bool.self, forKey: .bloqueoActivo) ?? false
+        saldoInicialCargado = try c.decodeIfPresent(Bool.self, forKey: .saldoInicialCargado) ?? false
     }
 }
 

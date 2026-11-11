@@ -13,6 +13,17 @@ final class FinanceStore: ObservableObject {
     init(persistencia: Persistencia = .shared) {
         self.persistencia = persistencia
         self.data = persistencia.cargar() ?? AppData()
+        cargarSaldoInicialSiFalta()
+    }
+
+    /// Migración de una sola vez: los datos guardados antes no traían el saldo inicial.
+    private func cargarSaldoInicialSiFalta() {
+        guard !data.ajustes.saldoInicialCargado else { return }
+        if !data.agenda.contains(where: { $0.id == Semilla.saldoInicialId }) {
+            data.agenda.insert(Semilla.saldoInicial, at: 0)
+        }
+        data.ajustes.saldoInicialCargado = true
+        try? persistencia.guardar(data)
     }
 
     /// Store aislado para las autopruebas: escribe en su propio archivo.
