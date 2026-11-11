@@ -47,6 +47,6 @@ enum RenewalReminder {
     static func daysRemaining(signedOn date: Date?) -> Int? {
         guard let date else { return nil }
         let expiry = Calendar.app.date(byAdding: .day, value: validityDays, to: date) ?? date
-        return expiry.days(since: Date())
+        return expiry.dias(desde: Date())
     }
 }
