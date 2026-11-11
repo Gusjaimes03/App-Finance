@@ -20,14 +20,25 @@ enum Semilla {
         Categoria(id: "comida", nombre: "Comida y mercado", mensual: 400_000, colorHex: "e8930c", simbolo: "fork.knife"),
         Categoria(id: "salidas", nombre: "Salidas y planes", mensual: 400_000, colorHex: "db3f8c", simbolo: "theatermasks.fill"),
         Categoria(id: "gasolina", nombre: "Gasolina", mensual: 400_000, colorHex: "e0443a", simbolo: "fuelpump.fill"),
+        Categoria(id: "antojos", nombre: "Onces, café y antojos", colorHex: "b45309", simbolo: "cup.and.saucer.fill"),
+        Categoria(id: "restaurantes", nombre: "Restaurantes y domicilios", colorHex: "d9480f", simbolo: "takeoutbag.and.cup.and.straw.fill"),
+        Categoria(id: "carro", nombre: "Carro y moto (taller, parqueo, peajes)", colorHex: "475569", simbolo: "car.fill"),
         Categoria(id: "transporte", nombre: "Transporte (bus, taxi)", colorHex: "0f9cc4", simbolo: "bus.fill"),
         Categoria(id: "mascota", nombre: "Morita", colorHex: "9a6b3a", simbolo: "pawprint.fill"),
         Categoria(id: "hogar", nombre: "Casa y aseo", colorHex: "0f9e8c", simbolo: "house.fill"),
+        Categoria(id: "celular", nombre: "Celular e internet", colorHex: "0369a1", simbolo: "iphone"),
         Categoria(id: "salud", nombre: "Salud y farmacia", colorHex: "1f9d55", simbolo: "cross.case.fill"),
-        Categoria(id: "estudio", nombre: "Estudio y trabajo", colorHex: "3a6ee8", simbolo: "book.fill"),
+        Categoria(id: "deporte", nombre: "Deporte y gimnasio", colorHex: "16a34a", simbolo: "figure.run"),
         Categoria(id: "ropa", nombre: "Ropa y cuidado personal", colorHex: "8456e0", simbolo: "tshirt.fill"),
-        Categoria(id: "regalos", nombre: "Regalos", colorHex: "f06a1f", simbolo: "gift.fill"),
+        Categoria(id: "estudio", nombre: "Estudio y trabajo", colorHex: "3a6ee8", simbolo: "book.fill"),
+        Categoria(id: "tecnologia", nombre: "Tecnología", colorHex: "4f46e5", simbolo: "laptopcomputer"),
+        Categoria(id: "finca", nombre: "Finca y ganado", colorHex: "65a30d", simbolo: "leaf.fill"),
         Categoria(id: "familia", nombre: "Familia", colorHex: "6f9a12", simbolo: "person.2.fill"),
+        Categoria(id: "regalos", nombre: "Regalos", colorHex: "f06a1f", simbolo: "gift.fill"),
+        Categoria(id: "viajes", nombre: "Viajes y paseos", colorHex: "0891b2", simbolo: "airplane"),
+        Categoria(id: "tramites", nombre: "Trámites e impuestos", colorHex: "64748b", simbolo: "doc.text.fill"),
+        Categoria(id: "bancos", nombre: "Bancos y comisiones (4x1000, cuota de manejo)", colorHex: "334155", simbolo: "building.columns.fill"),
+        Categoria(id: "donaciones", nombre: "Donaciones e iglesia", colorHex: "be185d", simbolo: "heart.fill"),
         Categoria(id: "otros", nombre: "Otros", colorHex: "7b869e", simbolo: "ellipsis.circle.fill")
     ]
 
@@ -104,7 +115,7 @@ enum Semilla {
                 nombre: "Comfacasanare (quincena del 15)",
                 monto: 1_400_000,
                 fecha: fecha(2026, 11, 20),
-                fechaTexto: "~16-20 nov",
+                fechaTexto: "16–20 nov",
                 nota: "Pagan hasta 5 días hábiles después del 15. No pagan en diciembre ni enero.",
                 simbolo: "building.2.fill"
             ),
@@ -113,7 +124,7 @@ enum Semilla {
                 nombre: "CLI",
                 monto: 824_600,
                 fecha: fecha(2026, 11, 12),
-                fechaTexto: "~del 10 en adelante",
+                fechaTexto: "Del 10 en adelante",
                 simbolo: "person.fill.checkmark"
             ),
             AgendaItem(
@@ -121,7 +132,7 @@ enum Semilla {
                 nombre: "Unitrópico",
                 monto: 3_800_000,
                 fecha: fecha(2026, 11, 30),
-                fechaTexto: "~30 nov",
+                fechaTexto: "30 nov",
                 nota: "Pagan el 28; si cae fin de semana, el siguiente día hábil.",
                 simbolo: "graduationcap.fill"
             ),
@@ -130,7 +141,7 @@ enum Semilla {
                 nombre: "Comfacasanare (quincena del 30)",
                 monto: 1_400_000,
                 fecha: fecha(2026, 12, 4),
-                fechaTexto: "~1-5 dic",
+                fechaTexto: "1–5 dic",
                 nota: "No pagan en diciembre ni enero.",
                 simbolo: "building.2.fill"
             ),
@@ -239,11 +250,11 @@ extension Semilla {
         datos.agenda = [
             AgendaItem(
                 tipo: .ingreso, nombre: "Comfacasanare (quincena del 15)", monto: 1_400_000,
-                fecha: dia(20), fechaTexto: "~16-20 nov", simbolo: "building.2.fill"
+                fecha: dia(20), fechaTexto: "16–20 nov", simbolo: "building.2.fill"
             ),
             AgendaItem(
                 tipo: .ingreso, nombre: "Unitrópico", monto: 3_800_000,
-                fecha: dia(30), fechaTexto: "~30 nov", simbolo: "graduationcap.fill"
+                fecha: dia(30), fechaTexto: "30 nov", simbolo: "graduationcap.fill"
             ),
             AgendaItem(
                 tipo: .ingreso, nombre: "CLI", monto: 824_600, fecha: dia(10),

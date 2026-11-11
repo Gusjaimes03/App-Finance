@@ -14,6 +14,12 @@ struct ResultadoHoy {
     var proximoIngreso: Obligacion?
     /// `true` si manda el presupuesto y no la plata disponible.
     var mandaPresupuesto: Bool = false
+    /// Cuota fija del día a día: presupuesto del mes ÷ días del mes.
+    var cuotaDiaria: Decimal = 0
+    /// Lo que se le quita hoy a la cuota por lo gastado de más en días anteriores.
+    var recorte: Decimal = 0
+    /// Lo gastado de más que todavía falta descontar (incluye el recorte de hoy).
+    var excesoPendiente: Decimal = 0
 }
 
 /// Columnas Presupuesto | Real hasta hoy (regla 4.4).
@@ -277,14 +283,10 @@ extension FinanceStore {
 
         let porPlata = max(0, libre + gastadoDebito(enDia: hoy) - pagosAntes) / Decimal(dias)
 
-        let presupuestoMes = presupuestoDiaADia(mes: hoy)
-        let gastadoAntes = gastos(enMes: hoy)
-            .filter { $0.fecha < hoy }
-            .reduce(Decimal.zero) { $0 + $1.monto }
-        let diasQueQuedan = max(1, hoy.diasDelMes - hoy.diaDelMes + 1)
-        let porPresupuesto = max(0, (presupuestoMes - gastadoAntes) / Decimal(diasQueQuedan))
+        let cuota = cuotaDiaria(mes: hoy)
+        let (porPresupuesto, recorte, pendiente) = cuotaDeHoy(hoy: hoy, cuota: cuota)
 
-        let hayPresupuesto = presupuestoMes > 0
+        let hayPresupuesto = cuota > 0
         let permitido = hayPresupuesto ? min(porPresupuesto, porPlata) : porPlata
         let gastadoDelDia = gastado(enDia: hoy)
 
@@ -297,8 +299,41 @@ extension FinanceStore {
             dias: dias,
             limite: limite,
             proximoIngreso: proximo,
-            mandaPresupuesto: hayPresupuesto && porPresupuesto < porPlata
+            mandaPresupuesto: hayPresupuesto && porPresupuesto < porPlata,
+            cuotaDiaria: cuota.redondeado,
+            recorte: recorte.redondeado,
+            excesoPendiente: pendiente.redondeado
         )
+    }
+
+    /// Cuota fija del día a día: la suma del presupuesto mensual de las categorías ÷ días del mes.
+    func cuotaDiaria(mes: Date) -> Decimal {
+        let suma = categoriasVisibles.reduce(Decimal.zero) { $0 + $1.mensual }
+        return suma / Decimal(max(1, mes.diasDelMes))
+    }
+
+    /// Recorre los días del mes que ya pasaron (desde que se registra).
+    /// Lo que un día se gasta por encima de lo permitido se reparte entre los días que quedan
+    /// del mes; lo que se gasta de menos no sube la cuota (queda como ahorro).
+    /// Devuelve (lo permitido hoy, recorte de hoy, exceso que falta descontar).
+    func cuotaDeHoy(hoy: Date, cuota: Decimal) -> (Decimal, Decimal, Decimal) {
+        guard cuota > 0 else { return (0, 0, 0) }
+        let hoy = hoy.inicioDeDia
+        var dia = max(hoy.inicioDeMes, data.inicio.inicioDeDia)
+        var pendiente: Decimal = 0
+
+        while dia < hoy {
+            let quedan = max(1, dia.diasDelMes - dia.diaDelMes + 1)
+            let recorte = pendiente / Decimal(quedan)
+            let permitido = max(0, cuota - recorte)
+            pendiente -= min(recorte, cuota)
+            pendiente += max(0, gastado(enDia: dia) - permitido)
+            dia = dia.sumandoDias(1)
+        }
+
+        let quedanHoy = max(1, hoy.diasDelMes - hoy.diaDelMes + 1)
+        let recorteHoy = min(cuota, pendiente / Decimal(quedanHoy))
+        return (max(0, cuota - recorteHoy), recorteHoy, pendiente)
     }
 
     // MARK: 4.4 Presupuesto del mes
@@ -453,9 +488,10 @@ extension FinanceStore {
         data.deudas.reduce(Decimal.zero) { $0 + ($1.valorBien ?? 0) }
     }
 
-    /// Lo tuyo, en plata.
+    /// Lo tuyo, en plata: solo la plata que de verdad tienes (libre + cajitas).
+    /// Lo que te deben, lo que debes y el valor de los bienes se muestran aparte y no se suman.
     var patrimonio: Decimal {
-        libre + enCajitas + totalMeDeben + valorDeBienes - totalDebo
+        libre + enCajitas
     }
 
     // MARK: Avisos de la pantalla de inicio

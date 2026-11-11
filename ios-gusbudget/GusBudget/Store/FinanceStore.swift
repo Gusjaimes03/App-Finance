@@ -21,6 +21,18 @@ final class FinanceStore: ObservableObject {
         self.persistencia = persistencia
         self.data = persistencia.cargar() ?? AppData()
         cargarSaldoInicialSiFalta()
+        agregarCategoriasNuevas()
+    }
+
+    /// Agrega las categorías que trae la app y faltan en los datos guardados (antes de "Otros").
+    /// Las que el usuario borró siguen ahí como ocultas, así que no vuelven a aparecer.
+    private func agregarCategoriasNuevas() {
+        let existentes = Set(data.categorias.map(\.id))
+        let nuevas = Semilla.categorias.filter { !existentes.contains($0.id) }
+        guard !nuevas.isEmpty else { return }
+        let posicion = data.categorias.firstIndex(where: { $0.id == "otros" }) ?? data.categorias.endIndex
+        data.categorias.insert(contentsOf: nuevas, at: posicion)
+        try? persistencia.guardar(data)
     }
 
     /// Migración de una sola vez: los datos guardados antes no traían el saldo inicial.
@@ -181,12 +193,13 @@ final class FinanceStore: ObservableObject {
             data.agenda[indice].monto += item.hechoMonto ?? item.monto
             data.agenda[indice].hecho = false
         }
-        if item.abono, let deudaId = item.deudaId, item.hecho {
-            ajustarDeuda(deudaId, delta: item.hechoMonto ?? item.monto)
+        // Un pago hecho que bajó una deuda (abono o "Ya pagué" enlazado) le devuelve el saldo.
+        if let (deudaId, efecto) = efectoEnDeuda(item) {
+            ajustarDeuda(deudaId, delta: -efecto)
         }
         data.agenda.removeAll { $0.id == item.id }
         guardar()
-        avisar("Quitado")
+        avisar("Borrado")
     }
 
     // MARK: Gastos fijos del mes
@@ -305,10 +318,10 @@ final class FinanceStore: ObservableObject {
     func quitarDeuda(_ deuda: Deuda) {
         data.deudas.removeAll { $0.id == deuda.id }
         guardar()
-        avisar("Deuda quitada")
+        avisar("Deuda borrada")
     }
 
-    private func ajustarDeuda(_ id: String, delta: Decimal) {
+    func ajustarDeuda(_ id: String, delta: Decimal) {
         guard let indice = data.deudas.firstIndex(where: { $0.id == id }) else { return }
         data.deudas[indice].saldo = max(0, data.deudas[indice].saldo + delta)
         if data.deudas[indice].saldo > data.deudas[indice].original {
@@ -400,12 +413,12 @@ final class FinanceStore: ObservableObject {
         avisar("Categoría agregada")
     }
 
-    /// Las categorías del usuario se ocultan: sus gastos se conservan.
+    /// Borrar una categoría (propia o de las que trae la app) la oculta: sus gastos se conservan.
     func ocultarCategoria(_ categoria: Categoria) {
         guard let indice = data.categorias.firstIndex(where: { $0.id == categoria.id }) else { return }
         data.categorias[indice].oculta = true
         guardar()
-        avisar("Categoría quitada")
+        avisar("Categoría borrada")
     }
 
     func actualizarFijo(_ fijo: Fijo) {
@@ -433,7 +446,7 @@ final class FinanceStore: ObservableObject {
     func quitarFijo(_ fijo: Fijo) {
         data.fijos.removeAll { $0.id == fijo.id }
         guardar()
-        avisar("Quitado")
+        avisar("\(fijo.nombre) borrado")
     }
 
     func actualizarTRM(_ valor: Decimal) {

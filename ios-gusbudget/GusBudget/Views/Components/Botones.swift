@@ -167,7 +167,7 @@ struct BotonCheck: View {
     let etiqueta: String
     var accion: () -> Void
 
-    @ScaledMetric(relativeTo: .body) private var lado: CGFloat = 30
+    @ScaledMetric(relativeTo: .body) private var lado: CGFloat = 20
 
     var body: some View {
         Button {
@@ -176,11 +176,11 @@ struct BotonCheck: View {
         } label: {
             ZStack {
                 Circle()
-                    .strokeBorder(hecho ? Color.clear : color.opacity(0.45), lineWidth: 2)
+                    .strokeBorder(hecho ? Color.clear : Theme.gris.opacity(0.35), lineWidth: 1.5)
                     .background(Circle().fill(hecho ? Theme.verde : Color.clear))
                 if hecho {
                     Image(systemName: "checkmark")
-                        .font(.system(size: lado * 0.42, weight: .bold))
+                        .font(.system(size: lado * 0.5, weight: .bold))
                         .foregroundStyle(Color.white)
                         .transition(.scale.combined(with: .opacity))
                 }

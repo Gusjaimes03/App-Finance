@@ -439,8 +439,19 @@ struct Obligacion: Identifiable, Hashable {
     var esFijo: Bool { fijoId != nil }
 
     var fechaMostrada: String {
-        if let fechaTexto, !fechaTexto.isEmpty { return fechaTexto }
+        if let texto = fechaTexto?.fechaSinTilde, !texto.isEmpty { return texto }
         if let fecha { return Fmt.diaYMes(fecha) }
         return "Sin fecha"
+    }
+}
+
+extension String {
+    /// Las fechas aproximadas venían con "~" adelante ("~16-20 nov"); se muestran sin él.
+    var fechaSinTilde: String {
+        var texto = trimmingCharacters(in: .whitespacesAndNewlines)
+        while texto.hasPrefix("~") { texto.removeFirst() }
+        texto = texto.trimmingCharacters(in: .whitespaces)
+        guard let primera = texto.first else { return texto }
+        return primera.uppercased() + texto.dropFirst()
     }
 }

@@ -15,12 +15,16 @@ enum Autopruebas {
         [
             pruebaPlataLibre(),
             pruebaHoyPuedesGastar(),
+            pruebaCuotaConExceso(),
+            pruebaCuotaSinPremio(),
             pruebaFijoPorMenos(),
             pruebaPagoDeTarjeta(),
             pruebaGastoConCredito(),
             pruebaAbonoParcial(),
             pruebaPrestamoRecibido(),
-            pruebaSuscripcionEnDolares()
+            pruebaSuscripcionEnDolares(),
+            pruebaEditarAbonoDeDeuda(),
+            pruebaEditarAbonoDeCobro()
         ]
     }
 
@@ -99,6 +103,27 @@ enum Autopruebas {
         }
         let hoy = store.hoyPuedesGastar(hoy: Semilla.fecha(2026, 11, 10))
         return resultado("Hoy puedes gastar", hoy.disponible, 11_559)
+    }
+
+    /// Cuota fija: $1.200.000 al mes en noviembre = $40.000 diarios. Gastar $100.000 el 10
+    /// deja $60.000 de más, que se reparten en los 20 días que quedan: el 11 la cuota es $37.000.
+    static func pruebaCuotaConExceso() -> Autoprueba {
+        let store = tienda { datos in
+            datos.agenda = [ingresoHecho(5_000_000, 6)]
+            datos.gastos = [Gasto(monto: 100_000, cat: "comida", fecha: Semilla.fecha(2026, 11, 10))]
+        }
+        let hoy = store.hoyPuedesGastar(hoy: Semilla.fecha(2026, 11, 11))
+        return resultado("Cuota diaria con un día de más", hoy.disponible, 37_000)
+    }
+
+    /// Gastar de menos no sube la cuota: con $10.000 el 10, el 11 sigue en $40.000.
+    static func pruebaCuotaSinPremio() -> Autoprueba {
+        let store = tienda { datos in
+            datos.agenda = [ingresoHecho(5_000_000, 6)]
+            datos.gastos = [Gasto(monto: 10_000, cat: "comida", fecha: Semilla.fecha(2026, 11, 10))]
+        }
+        let hoy = store.hoyPuedesGastar(hoy: Semilla.fecha(2026, 11, 11))
+        return resultado("Cuota diaria sin premio por gastar menos", hoy.disponible, 40_000)
     }
 
     /// 3. Pagar un fijo por menos: se guarda el real y se muestra el ahorro.
@@ -223,5 +248,57 @@ enum Autopruebas {
             return Autoprueba(nombre: "Suscripción en dólares", pasa: false, detalle: "falta la suscripción")
         }
         return resultado("Suscripción en dólares", store.montoFijo(claude) ?? 0, 323_559)
+    }
+
+    // MARK: Editar y borrar
+
+    /// 9. Corregir un abono a una deuda ajusta el saldo; borrarlo lo devuelve y deshacer lo vuelve a bajar.
+    static func pruebaEditarAbonoDeDeuda() -> Autoprueba {
+        let store = tienda()
+        guard let monet = store.deuda("monet") else {
+            return Autoprueba(nombre: "Editar abono de deuda", pasa: false, detalle: "falta la deuda de prueba")
+        }
+        store.abonarDeuda(monet, monto: 100_000, fecha: Semilla.fecha(2026, 11, 10))
+        guard var abono = store.data.agenda.first(where: { $0.abono && $0.deudaId == "monet" }) else {
+            return Autoprueba(nombre: "Editar abono de deuda", pasa: false, detalle: "no se creó el abono")
+        }
+        abono.hechoMonto = 150_000
+        abono.monto = 150_000
+        store.actualizarAgenda(abono)
+        let corregido = store.deuda("monet")?.saldo ?? -1
+        let deshacer = store.borrarAgenda(abono)
+        let borrado = store.deuda("monet")?.saldo ?? -1
+        deshacer()
+        let rehecho = store.deuda("monet")?.saldo ?? -1
+        let pasa = corregido == 292_000 && borrado == 442_000 && rehecho == 292_000
+        return Autoprueba(
+            nombre: "Editar abono de deuda",
+            pasa: pasa,
+            detalle: pasa ? "queda en $ 292.000, al borrarlo vuelve a $ 442.000 y deshacer lo baja otra vez"
+                          : "quedó en \(Fmt.plata(corregido)), \(Fmt.plata(borrado)) y \(Fmt.plata(rehecho))"
+        )
+    }
+
+    /// 10. Corregir el abono de un cobro cambia lo que te deben por la diferencia.
+    static func pruebaEditarAbonoDeCobro() -> Autoprueba {
+        let cobro = AgendaItem(
+            tipo: .ingreso, nombre: "Mamá", monto: 500_000,
+            porCobrar: true, persona: "Mamá", montoOriginal: 500_000
+        )
+        let store = tienda { datos in datos.agenda = [cobro] }
+        store.registrarCobro(cobro, monto: 200_000, fecha: Semilla.fecha(2026, 11, 10))
+        guard var abono = store.data.agenda.first(where: { $0.cobroId == cobro.id }) else {
+            return Autoprueba(nombre: "Editar abono de cobro", pasa: false, detalle: "no se creó el abono")
+        }
+        abono.hechoMonto = 250_000
+        abono.monto = 250_000
+        store.actualizarAgenda(abono)
+        let pendiente = store.data.agenda.first { $0.id == cobro.id }?.monto ?? 0
+        let pasa = pendiente == 250_000
+        return Autoprueba(
+            nombre: "Editar abono de cobro",
+            pasa: pasa,
+            detalle: pasa ? "te queda debiendo $ 250.000" : "quedó en \(Fmt.plata(pendiente))"
+        )
     }
 }

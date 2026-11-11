@@ -13,6 +13,7 @@ struct PresupuestoView: View {
     @State private var mes = Date().inicioDeMes
     @State private var solicitud: SolicitudValor?
     @State private var mostrarAjustar = false
+    @State private var edicion: EdicionDato?
 
     private var resumen: ResumenMes { store.resumen(mes: mes) }
     private var periodo: String { mes.clavePeriodo }
@@ -60,11 +61,11 @@ struct PresupuestoView: View {
                         )
                     }
 
-                    planContraReal(r)
                     categorias(r)
                     seccionFijos
                     if !suscripciones.isEmpty { seccionSuscripciones }
                     if !pagosUnicos.isEmpty { seccionUnicos }
+                    planContraReal(r)
                     enlaceAjustar
                 }
                 .contenidoPantalla()
@@ -88,6 +89,7 @@ struct PresupuestoView: View {
             .sheet(item: $solicitud) { peticion in
                 HojaValorReal(solicitud: peticion)
             }
+            .hojaEdicion($edicion)
         }
     }
 
@@ -218,7 +220,14 @@ struct PresupuestoView: View {
                 VStack(spacing: 0) {
                     ForEach(Array(lineas.enumerated()), id: \.element.id) { indice, linea in
                         if indice > 0 { SeparadorFila() }
-                        FilaCategoriaPresupuesto(linea: linea)
+                        Button {
+                            edicion = .categoria(linea.categoria.id)
+                        } label: {
+                            FilaCategoriaPresupuesto(linea: linea)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.presionable)
+                        .accessibilityHint("Toca para editar la categoría")
                     }
                 }
                 .panel(padding: 0)
@@ -337,7 +346,7 @@ struct PresupuestoView: View {
         .accessibilityValue(descripcionFijo(fijo, pago: pago, presupuestado: presupuestado))
         .accessibilityAction {
             if let pago {
-                corregirPago(pago, de: fijo)
+                edicion = .pagoFijo(pago.id)
             } else {
                 pedirPago(fijo, sugerido: presupuestado)
             }
@@ -370,9 +379,9 @@ struct PresupuestoView: View {
     private func accionesFijo(_ fijo: Fijo, pago: PagoFijo?, presupuestado: Decimal) -> some View {
         if let pago {
             Button {
-                corregirPago(pago, de: fijo)
+                edicion = .pagoFijo(pago.id)
             } label: {
-                Label("Corregir valor", systemImage: "pencil")
+                Label("Editar pago (valor o fecha)", systemImage: "pencil")
             }
             Button {
                 deshacerPago(pago, de: fijo)
@@ -385,6 +394,12 @@ struct PresupuestoView: View {
             } label: {
                 Label("Ya pagué", systemImage: "checkmark.circle")
             }
+        }
+        Button {
+            edicion = .fijo(fijo.id)
+        } label: {
+            Label(fijo.esSuscripcion ? "Editar o borrar suscripción" : "Editar o borrar gasto fijo",
+                  systemImage: "slider.horizontal.3")
         }
     }
 
@@ -421,17 +436,6 @@ struct PresupuestoView: View {
         }
     }
 
-    private func corregirPago(_ pago: PagoFijo, de fijo: Fijo) {
-        solicitud = SolicitudValor(
-            titulo: fijo.nombre,
-            pregunta: "¿Cuánto pagaste de verdad?",
-            montoSugerido: pago.monto,
-            fechaSugerida: pago.fecha
-        ) { monto, _ in
-            store.corregirPagoFijo(pago, monto: monto)
-        }
-    }
-
     private func deshacerPago(_ pago: PagoFijo, de fijo: Fijo) {
         let periodoActual = periodo
         let tienda = store
@@ -444,7 +448,7 @@ struct PresupuestoView: View {
         }
     }
 
-    // MARK: Pagos únicos (solo lectura: se manejan en Pagos)
+    // MARK: Pagos únicos (se marcan en Pagos; tocar uno lo edita)
 
     private var seccionUnicos: some View {
         VStack(alignment: .leading, spacing: Espacio.titulo) {
@@ -457,17 +461,23 @@ struct PresupuestoView: View {
             VStack(spacing: 0) {
                 ForEach(Array(pagosUnicos.enumerated()), id: \.element.id) { indice, item in
                     if indice > 0 { SeparadorFila() }
-                    FilaLista(
-                        simbolo: item.simbolo,
-                        color: item.hecho ? Theme.verde : Theme.gris,
-                        titulo: item.nombre,
-                        subtitulo: item.mesContable.map { Fmt.diaYMes($0) },
-                        insignia: Insignia(texto: item.hecho ? "Pagado" : "Pendiente",
-                                           tono: item.hecho ? .positivo : .neutro)
-                    ) {
-                        CifraPlata(valor: item.valorEfectivo, estilo: .normal, signo: .ninguno)
+                    Button {
+                        edicion = .agenda(item.id)
+                    } label: {
+                        FilaLista(
+                            simbolo: item.simbolo,
+                            color: item.hecho ? Theme.verde : Theme.gris,
+                            titulo: item.nombre,
+                            subtitulo: item.mesContable.map { Fmt.diaYMes($0) },
+                            insignia: Insignia(texto: item.hecho ? "Pagado" : "Pendiente",
+                                               tono: item.hecho ? .positivo : .neutro)
+                        ) {
+                            CifraPlata(valor: item.valorEfectivo, estilo: .normal, signo: .ninguno)
+                        }
+                        .accessibilityElement(children: .combine)
                     }
-                    .accessibilityElement(children: .combine)
+                    .buttonStyle(.presionable)
+                    .accessibilityHint("Toca para editarlo o borrarlo")
                 }
             }
             .panel(padding: 0)

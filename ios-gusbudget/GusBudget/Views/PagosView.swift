@@ -13,6 +13,7 @@ struct PagosView: View {
     /// "Ya hecho" sobre el que se abrió el menú de acciones (deshacer o borrar).
     @State private var hechoElegido: AgendaItem?
     @State private var verTodosHechos = false
+    @State private var edicion: EdicionDato?
 
     /// Cuántos "ya hechos" se ven antes de tocar "Ver todos".
     private let hechosVisibles = 5
@@ -76,7 +77,8 @@ struct PagosView: View {
                             FilaObligacion(
                                 obligacion: obligacion,
                                 alHacer: { solicitud = solicitudPago(obligacion) },
-                                alQuitar: accionBorrar(obligacion)
+                                alQuitar: accionBorrar(obligacion),
+                                alEditar: { edicion = EdicionDato.de(obligacion) }
                             )
                             .listRowBackground(Theme.superficie)
                             .listRowSeparatorTint(Theme.linea)
@@ -105,7 +107,7 @@ struct PagosView: View {
                         }
                         .listRowBackground(Theme.superficie)
                     } footer: {
-                        Text("Desliza un pago a la derecha para marcarlo como hecho, o a la izquierda para borrarlo.")
+                        Text("Toca un pago para editarlo. Desliza a la derecha para marcarlo como hecho, o a la izquierda para editarlo o borrarlo.")
                             .font(.footnote)
                             .foregroundStyle(Theme.gris)
                     }
@@ -161,13 +163,18 @@ struct PagosView: View {
             .sheet(isPresented: $mostrarFormulario) {
                 HojaNuevoPago().environmentObject(store)
             }
+            .hojaEdicion($edicion)
             .confirmationDialog(
                 "¿Borrar \(quitando?.nombre ?? "")?",
                 isPresented: Binding(get: { quitando != nil }, set: { if !$0 { quitando = nil } }),
                 titleVisibility: .visible
             ) {
                 Button("Borrar", role: .destructive) {
-                    if let quitando { store.quitar(quitando) }
+                    if let quitando, let agendaId = quitando.agendaId,
+                       let item = store.data.agenda.first(where: { $0.id == agendaId }) {
+                        let tienda = store
+                        ofrecerDeshacer(deshacer: tienda.borrarAgenda(item))
+                    }
                     quitando = nil
                 }
                 Button("Cancelar", role: .cancel) { quitando = nil }
@@ -183,7 +190,8 @@ struct PagosView: View {
             if let item = hechoElegido {
                 if seBorra(item) {
                     Button("Borrar", role: .destructive) {
-                        store.quitarAgenda(item)
+                        let tienda = store
+                        ofrecerDeshacer(deshacer: tienda.borrarAgenda(item))
                         hechoElegido = nil
                     }
                 } else {
@@ -282,7 +290,7 @@ struct PagosView: View {
         let esIngreso = item.tipo == .ingreso
         let fecha = Fmt.fechaCorta(item.hechoFecha ?? item.creado)
         return Button {
-            hechoElegido = item
+            edicion = .agenda(item.id)
         } label: {
             HStack(spacing: Espacio.s) {
                 IconoCuadro(simbolo: item.simbolo, color: esIngreso ? Theme.verde : Theme.acento, lado: 36)
@@ -307,8 +315,13 @@ struct PagosView: View {
         }
         .buttonStyle(.presionable)
         .accessibilityElement(children: .combine)
-        .accessibilityHint(seBorra(item) ? "Toca para borrarlo" : "Toca para deshacerlo")
+        .accessibilityHint("Toca para editarlo o borrarlo")
         .contextMenu {
+            Button {
+                edicion = .agenda(item.id)
+            } label: {
+                Label("Editar", systemImage: "pencil")
+            }
             if seBorra(item) {
                 Button(role: .destructive) {
                     hechoElegido = item

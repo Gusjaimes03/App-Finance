@@ -14,6 +14,7 @@
 		86E3199CF6A11D6D4FE63F58 /* Acciones.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6B9700DD1D734EB09444051 /* Acciones.swift */; };
 		AB1E58089F3E78B41F568FC8 /* Autopruebas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FC4B3072EA9D8C9C896D055 /* Autopruebas.swift */; };
 		9ED209E16981B7A3C3C40FBC /* Calculos.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BF507FB5AF4A15C6F078F7 /* Calculos.swift */; };
+		EC1B44A8F43E96877BFFD568 /* Edicion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DEE65C6D4CD488FAB80F974 /* Edicion.swift */; };
 		6CDC4CED02C3934398D3C2A7 /* FinanceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD1518E153FC64C372665E53 /* FinanceStore.swift */; };
 		790E87DD3952F9062C24EACC /* Habitos.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDA46A3D3017C8DD7A70C7A7 /* Habitos.swift */; };
 		B88052D18D21C554DFF5B44B /* Persistencia.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F8511EB1A20EFD3CBE8ACA9 /* Persistencia.swift */; };
@@ -27,6 +28,7 @@
 		E6A004A6334EB7BEC7619B7C /* AjustesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5834DEE6CFCF58B17E495A0 /* AjustesView.swift */; };
 		FAC3871E7B5608E01D8D4779 /* BalanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58273A5CEF6885BA025A3157 /* BalanceView.swift */; };
 		C3F8ECA03F9B3AB24CA60786 /* HojaGasto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8652D9177325C982DD9C9381 /* HojaGasto.swift */; };
+		DA17628D802D9A38CE7693F7 /* HojasEditar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD64B89BCABB9D65088F0A8 /* HojasEditar.swift */; };
 		ED124DCE08485B509397C602 /* InicioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41E3BDFA3B4AABB2D892BA3F /* InicioView.swift */; };
 		1888EAE8D10D89CE62BC6BEB /* MovimientosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B618BBCAE02FC14B8C4B06EC /* MovimientosView.swift */; };
 		4BBEF0A417233619BAB37761 /* PagosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEBDD83DDB139442CD75206D /* PagosView.swift */; };
@@ -54,6 +56,7 @@
 		A6B9700DD1D734EB09444051 /* Acciones.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Acciones.swift; sourceTree = "<group>"; };
 		2FC4B3072EA9D8C9C896D055 /* Autopruebas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Autopruebas.swift; sourceTree = "<group>"; };
 		B3BF507FB5AF4A15C6F078F7 /* Calculos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Calculos.swift; sourceTree = "<group>"; };
+		8DEE65C6D4CD488FAB80F974 /* Edicion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Edicion.swift; sourceTree = "<group>"; };
 		DD1518E153FC64C372665E53 /* FinanceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinanceStore.swift; sourceTree = "<group>"; };
 		BDA46A3D3017C8DD7A70C7A7 /* Habitos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Habitos.swift; sourceTree = "<group>"; };
 		2F8511EB1A20EFD3CBE8ACA9 /* Persistencia.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistencia.swift; sourceTree = "<group>"; };
@@ -75,6 +78,7 @@
 		BE1190C9892B21E63AB600B3 /* Hojas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hojas.swift; sourceTree = "<group>"; };
 		923F7BAF9984CD6DBA0C6B24 /* Tarjetas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tarjetas.swift; sourceTree = "<group>"; };
 		8652D9177325C982DD9C9381 /* HojaGasto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HojaGasto.swift; sourceTree = "<group>"; };
+		7FD64B89BCABB9D65088F0A8 /* HojasEditar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HojasEditar.swift; sourceTree = "<group>"; };
 		41E3BDFA3B4AABB2D892BA3F /* InicioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InicioView.swift; sourceTree = "<group>"; };
 		B618BBCAE02FC14B8C4B06EC /* MovimientosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovimientosView.swift; sourceTree = "<group>"; };
 		FEBDD83DDB139442CD75206D /* PagosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PagosView.swift; sourceTree = "<group>"; };
@@ -139,6 +143,7 @@
 				A6B9700DD1D734EB09444051 /* Acciones.swift */,
 				2FC4B3072EA9D8C9C896D055 /* Autopruebas.swift */,
 				B3BF507FB5AF4A15C6F078F7 /* Calculos.swift */,
+				8DEE65C6D4CD488FAB80F974 /* Edicion.swift */,
 				DD1518E153FC64C372665E53 /* FinanceStore.swift */,
 				BDA46A3D3017C8DD7A70C7A7 /* Habitos.swift */,
 				2F8511EB1A20EFD3CBE8ACA9 /* Persistencia.swift */,
@@ -167,6 +172,7 @@
 				B5834DEE6CFCF58B17E495A0 /* AjustesView.swift */,
 				58273A5CEF6885BA025A3157 /* BalanceView.swift */,
 				8652D9177325C982DD9C9381 /* HojaGasto.swift */,
+				7FD64B89BCABB9D65088F0A8 /* HojasEditar.swift */,
 				41E3BDFA3B4AABB2D892BA3F /* InicioView.swift */,
 				B618BBCAE02FC14B8C4B06EC /* MovimientosView.swift */,
 				FEBDD83DDB139442CD75206D /* PagosView.swift */,
@@ -269,6 +275,7 @@
 				86E3199CF6A11D6D4FE63F58 /* Acciones.swift in Sources */,
 				AB1E58089F3E78B41F568FC8 /* Autopruebas.swift in Sources */,
 				9ED209E16981B7A3C3C40FBC /* Calculos.swift in Sources */,
+				EC1B44A8F43E96877BFFD568 /* Edicion.swift in Sources */,
 				6CDC4CED02C3934398D3C2A7 /* FinanceStore.swift in Sources */,
 				790E87DD3952F9062C24EACC /* Habitos.swift in Sources */,
 				B88052D18D21C554DFF5B44B /* Persistencia.swift in Sources */,
@@ -282,6 +289,7 @@
 				E6A004A6334EB7BEC7619B7C /* AjustesView.swift in Sources */,
 				FAC3871E7B5608E01D8D4779 /* BalanceView.swift in Sources */,
 				C3F8ECA03F9B3AB24CA60786 /* HojaGasto.swift in Sources */,
+				DA17628D802D9A38CE7693F7 /* HojasEditar.swift in Sources */,
 				ED124DCE08485B509397C602 /* InicioView.swift in Sources */,
 				1888EAE8D10D89CE62BC6BEB /* MovimientosView.swift in Sources */,
 				4BBEF0A417233619BAB37761 /* PagosView.swift in Sources */,

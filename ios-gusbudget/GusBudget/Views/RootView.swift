@@ -19,6 +19,8 @@ struct RootView: View {
     /// Texto del aviso para el que se ofreció `deshacer`. Si llega otro aviso, el deshacer ya no aplica.
     @State private var avisoDeshacer: String?
     @State private var mostrarGaleria = false
+    /// Solo para capturas: -abrirEdicion cajita|deuda|cobro|saldo|ingreso|pago|pagoFijo|fijo|categoria|gasto
+    @State private var edicionDePrueba: EdicionDato?
 
     init() {
         var inicial = Pestana.inicio
@@ -53,6 +55,11 @@ struct RootView: View {
                 .tabItem { Label("Inicio", systemImage: "house") }
                 .tag(Pestana.inicio)
 
+            PagosView()
+                .modifier(BarraInferior(activa: pestana == .pagos, contenido: barraInferior))
+                .tabItem { Label("Pagos", systemImage: "calendar") }
+                .tag(Pestana.pagos)
+
             MovimientosView()
                 .modifier(BarraInferior(activa: pestana == .movimientos, contenido: barraInferior))
                 .tabItem { Label("Movimientos", systemImage: "list.bullet.rectangle") }
@@ -62,11 +69,6 @@ struct RootView: View {
                 .modifier(BarraInferior(activa: pestana == .presupuesto, contenido: barraInferior))
                 .tabItem { Label("Presupuesto", systemImage: "chart.pie") }
                 .tag(Pestana.presupuesto)
-
-            PagosView()
-                .modifier(BarraInferior(activa: pestana == .pagos, contenido: barraInferior))
-                .tabItem { Label("Pagos", systemImage: "calendar") }
-                .tag(Pestana.pagos)
 
             BalanceView()
                 .modifier(BarraInferior(activa: pestana == .balance, contenido: barraInferior))
@@ -89,6 +91,11 @@ struct RootView: View {
         #if DEBUG
         .fullScreenCover(isPresented: $mostrarGaleria) {
             GaleriaDiseno()
+        }
+        .sheet(item: $edicionDePrueba) { dato in
+            HojaEdicion(edicion: dato)
+                .environmentObject(store)
+                .environment(\.ofrecerDeshacer, accionDeshacer)
         }
         #endif
         .task(id: "\(store.aviso ?? "")#\(avisoDeshacer ?? "")#\(deshacerVigente == nil ? 0 : 1)") {
@@ -132,6 +139,9 @@ struct RootView: View {
             #if DEBUG
             if UserDefaults.standard.bool(forKey: "abrirRegistro") { mostrarRegistro = true }
             if UserDefaults.standard.bool(forKey: "galeriaDiseno") { mostrarGaleria = true }
+            if let tipo = UserDefaults.standard.string(forKey: "abrirEdicion") {
+                edicionDePrueba = buscarEdicionDePrueba(tipo)
+            }
             #endif
         }
         // Las hojas abiertas quedan por encima del overlay: el bloqueo también va en una
@@ -154,6 +164,25 @@ struct RootView: View {
             }
         }
     }
+
+    #if DEBUG
+    private func buscarEdicionDePrueba(_ tipo: String) -> EdicionDato? {
+        let d = store.data
+        switch tipo {
+        case "cajita": return d.cajitas.first.map { .cajita($0.id) }
+        case "deuda": return d.deudas.first.map { .deuda($0.id) }
+        case "cobro": return d.agenda.first(where: { $0.porCobrar && !$0.hecho }).map { .agenda($0.id) }
+        case "saldo": return d.agenda.first(where: { $0.ajuste }).map { .agenda($0.id) }
+        case "ingreso": return d.agenda.first(where: { $0.hecho && $0.esSueldo }).map { .agenda($0.id) }
+        case "pago": return d.agenda.first(where: { !$0.hecho && $0.tipo == .pago }).map { .agenda($0.id) }
+        case "pagoFijo": return d.pagosFijos.first.map { .pagoFijo($0.id) }
+        case "fijo": return d.fijos.first.map { .fijo($0.id) }
+        case "categoria": return d.categorias.first.map { .categoria($0.id) }
+        case "gasto": return d.gastos.first.map { .gasto($0.id) }
+        default: return nil
+        }
+    }
+    #endif
 
     /// El deshacer solo vale para el aviso que lo ofreció.
     private var deshacerVigente: (() -> Void)? {

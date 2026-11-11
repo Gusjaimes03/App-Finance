@@ -91,6 +91,8 @@ struct FilaObligacion: View {
     let obligacion: Obligacion
     var alHacer: () -> Void
     var alQuitar: (() -> Void)?
+    /// Abre la ficha para editar (tocar el nombre o el valor también la abre).
+    var alEditar: (() -> Void)?
 
     private var esPago: Bool { obligacion.tipo == .pago }
     private var textoAccion: String { esPago ? "Ya pagué" : "Ya me llegó" }
@@ -106,44 +108,53 @@ struct FilaObligacion: View {
                        accion: alHacer)
                 .padding(.leading, -6)
 
-            VStack(alignment: .leading, spacing: 3) {
-                // El estado ("Pronto", "Vencido") va junto al nombre para que la fecha tenga toda la línea.
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text(obligacion.nombre)
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(Theme.texto)
-                        .lineLimit(2)
-                    if let etiqueta = obligacion.estado.etiqueta {
-                        Insignia(texto: etiqueta, tono: tonoEstado)
-                            .fixedSize()
-                            .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] + 4 }
+            HStack(spacing: Espacio.s) {
+                VStack(alignment: .leading, spacing: 3) {
+                    // El estado ("Pronto", "Vencido") va junto al nombre para que la fecha tenga toda la línea.
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(obligacion.nombre)
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(Theme.texto)
+                            .lineLimit(2)
+                        if let etiqueta = obligacion.estado.etiqueta {
+                            Insignia(texto: etiqueta, tono: tonoEstado)
+                                .fixedSize()
+                                .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] + 4 }
+                        }
+                    }
+                    Text(obligacion.fechaMostrada)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.gris)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Group {
+                    if obligacion.monto > 0 {
+                        CifraPlata(valor: obligacion.monto, estilo: .normal,
+                                   signo: esPago ? .ninguno : .entrada)
+                    } else {
+                        Text("Sin valor")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.grisClaro)
                     }
                 }
-                Text(obligacion.fechaMostrada)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.gris)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
+                .layoutPriority(1)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Group {
-                if obligacion.monto > 0 {
-                    CifraPlata(valor: obligacion.monto, estilo: .normal,
-                               signo: esPago ? .ninguno : .entrada)
-                } else {
-                    Text("Sin valor")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.grisClaro)
-                }
-            }
-            .layoutPriority(1)
+            .contentShape(Rectangle())
+            .onTapGesture { alEditar?() }
         }
         .padding(.vertical, Espacio.xs)
         .contentShape(Rectangle())
         .contextMenu {
             Button(action: alHacer) {
                 Label(textoAccion, systemImage: "checkmark.circle")
+            }
+            if let alEditar {
+                Button(action: alEditar) {
+                    Label("Editar", systemImage: "pencil")
+                }
             }
             if let alQuitar {
                 Button(role: .destructive, action: alQuitar) {
@@ -163,9 +174,16 @@ struct FilaObligacion: View {
                     Label("Borrar", systemImage: "trash")
                 }
             }
+            if let alEditar {
+                Button(action: alEditar) {
+                    Label("Editar", systemImage: "pencil")
+                }
+                .tint(Theme.acento)
+            }
         }
         .accessibilityElement(children: .combine)
         .accessibilityAction(named: textoAccion, alHacer)
+        .accessibilityAction(named: "Editar") { alEditar?() }
     }
 }
 

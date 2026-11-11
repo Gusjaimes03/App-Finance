@@ -70,7 +70,7 @@ struct MovimientosView: View {
     @State private var busqueda = ""
     @State private var categoriaFiltro: String?
     @State private var gastoEditando: Gasto?
-    @State private var detalleAbierto: Movimiento?
+    @State private var edicion: EdicionDato?
     @State private var porBorrar: Movimiento?
 
     private var animacion: Animation? {
@@ -204,9 +204,7 @@ struct MovimientosView: View {
                 .onChange(of: filtro) { nuevo in
                     if nuevo == .entradas || nuevo == .pagos { categoriaFiltro = nil }
                 }
-                .sheet(item: $detalleAbierto) { movimiento in
-                    hojaDetalle(movimiento)
-                }
+                .hojaEdicion($edicion)
                 .confirmationDialog(
                     tituloBorrado,
                     isPresented: Binding(
@@ -219,7 +217,7 @@ struct MovimientosView: View {
                     Button("Borrar", role: .destructive) { borrar(movimiento) }
                     Button("Cancelar", role: .cancel) {}
                 } message: { movimiento in
-                    Text("\(titulo(de: movimiento)) · \(Fmt.plata(movimiento.monto)). No se puede deshacer.")
+                    Text("\(titulo(de: movimiento)) · \(Fmt.plata(movimiento.monto)).")
                 }
         }
         .sheet(item: $gastoEditando) { gasto in
@@ -457,21 +455,19 @@ struct MovimientosView: View {
             .accessibilityElement(children: .combine)
         }
         .buttonStyle(.presionable)
-        .accessibilityHint(esGasto(movimiento) ? "Toca para corregirlo o borrarlo" : "Toca para ver el detalle")
+        .accessibilityHint("Toca para editarlo o borrarlo")
         .listRowInsets(EdgeInsets())
         .listRowBackground(Theme.superficie)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             accionesDeslizar(movimiento)
         }
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
-            if case .gasto(let gasto) = movimiento {
-                Button {
-                    gastoEditando = gasto
-                } label: {
-                    Label("Editar", systemImage: "pencil")
-                }
-                .tint(Theme.acento)
+            Button {
+                abrir(movimiento)
+            } label: {
+                Label("Editar", systemImage: "pencil")
             }
+            .tint(Theme.acento)
         }
         .contextMenu {
             accionesMenu(movimiento)
@@ -500,18 +496,10 @@ struct MovimientosView: View {
 
     @ViewBuilder
     private func accionesMenu(_ movimiento: Movimiento) -> some View {
-        if case .gasto(let gasto) = movimiento {
-            Button {
-                gastoEditando = gasto
-            } label: {
-                Label("Editar gasto", systemImage: "pencil")
-            }
-        } else {
-            Button {
-                detalleAbierto = movimiento
-            } label: {
-                Label("Ver detalle", systemImage: "info.circle")
-            }
+        Button {
+            abrir(movimiento)
+        } label: {
+            Label(esGasto(movimiento) ? "Editar gasto" : "Editar", systemImage: "pencil")
         }
         if puedeDeshacer(movimiento) {
             Button {
@@ -702,10 +690,10 @@ struct MovimientosView: View {
     // MARK: Acciones
 
     private func abrir(_ movimiento: Movimiento) {
-        if case .gasto(let gasto) = movimiento {
-            gastoEditando = gasto
-        } else {
-            detalleAbierto = movimiento
+        switch movimiento {
+        case .gasto(let gasto): gastoEditando = gasto
+        case .agenda(let item): edicion = .agenda(item.id)
+        case .fijo(let pago, _): edicion = .pagoFijo(pago.id)
         }
     }
 
@@ -751,9 +739,14 @@ struct MovimientosView: View {
     private func borrar(_ movimiento: Movimiento) {
         switch movimiento {
         case .gasto(let gasto):
-            withAnimation(animacion) { store.borrarGasto(gasto) }
+            let tienda = store
+            withAnimation(animacion) { tienda.borrarGasto(gasto) }
+            ofrecerDeshacer { tienda.restaurarGasto(gasto) }
         case .agenda(let item):
-            withAnimation(animacion) { store.quitarAgenda(item) }
+            let tienda = store
+            var deshacer: () -> Void = {}
+            withAnimation(animacion) { deshacer = tienda.borrarAgenda(item) }
+            ofrecerDeshacer(deshacer: deshacer)
         case .fijo:
             break
         }
@@ -784,66 +777,6 @@ struct MovimientosView: View {
         case .gasto:
             break
         }
-    }
-
-    // MARK: Hoja de detalle (pagos e ingresos)
-
-    private func hojaDetalle(_ movimiento: Movimiento) -> some View {
-        let borra = puedeBorrar(movimiento)
-        let deshace = puedeDeshacer(movimiento)
-        let tituloAccion: String? = borra ? "Borrar" : (deshace ? tituloDeshacer(movimiento) : nil)
-
-        return HojaDetalleMovimiento(
-            simbolo: simbolo(de: movimiento),
-            color: color(de: movimiento),
-            titulo: titulo(de: movimiento),
-            tipo: tipo(de: movimiento),
-            monto: movimiento.monto,
-            esEntrada: movimiento.esEntrada,
-            datos: datosDetalle(de: movimiento),
-            tituloAccion: tituloAccion,
-            destructiva: borra,
-            notaAccion: deshace ? "Vuelve a quedar pendiente en Pagos." : nil,
-            accion: {
-                if borra {
-                    borrar(movimiento)
-                } else if deshace {
-                    deshacer(movimiento)
-                }
-            }
-        )
-    }
-
-    private func datosDetalle(de movimiento: Movimiento) -> [DatoDetalle] {
-        var lista = [DatoDetalle(titulo: "Fecha", valor: Fmt.encabezadoDia(movimiento.fecha))]
-        switch movimiento {
-        case .gasto:
-            break
-        case .agenda(let a):
-            if let fuente = a.fuente, !fuente.isEmpty, fuente != a.nombre {
-                lista.append(DatoDetalle(titulo: "De dónde", valor: fuente))
-            }
-            if let persona = a.persona, !persona.isEmpty, persona != a.nombre {
-                lista.append(DatoDetalle(titulo: "Persona", valor: persona))
-            }
-            if let hecho = a.hechoMonto, hecho != a.monto {
-                lista.append(DatoDetalle(titulo: "Valor esperado", valor: Fmt.plata(a.monto)))
-            }
-            if let nota = a.nota, !nota.isEmpty, nota != a.nombre {
-                lista.append(DatoDetalle(titulo: "Nota", valor: nota))
-            }
-        case .fijo(let p, _):
-            if p.presupuesto != p.monto {
-                lista.append(DatoDetalle(titulo: "Presupuestado", valor: Fmt.plata(p.presupuesto)))
-            }
-            if p.ahorro > 0 {
-                lista.append(DatoDetalle(titulo: "Te ahorraste", valor: Fmt.plata(p.ahorro)))
-            }
-            if let periodo = Date.desdePeriodo(p.periodo), !periodo.mismoMes(que: p.fecha) {
-                lista.append(DatoDetalle(titulo: "Corresponde a", valor: Fmt.mes(periodo)))
-            }
-        }
-        return lista
     }
 
     // MARK: Textos de cada fila
@@ -967,131 +900,6 @@ private struct SelectorVista: View {
         .buttonStyle(.plain)
         .accessibilityLabel(opcion.titulo)
         .accessibilityAddTraits(activa ? .isSelected : [])
-    }
-}
-
-// MARK: - Detalle de un pago o ingreso
-
-private struct DatoDetalle: Identifiable {
-    let titulo: String
-    let valor: String
-    var id: String { titulo }
-}
-
-/// Hoja con el detalle de un pago o ingreso ya hecho, con su única acción (deshacer o borrar).
-private struct HojaDetalleMovimiento: View {
-    let simbolo: String
-    let color: Color
-    let titulo: String
-    let tipo: String
-    let monto: Decimal
-    let esEntrada: Bool
-    let datos: [DatoDetalle]
-    let tituloAccion: String?
-    let destructiva: Bool
-    let notaAccion: String?
-    let accion: () -> Void
-
-    @Environment(\.dismiss) private var cerrar
-    @State private var confirmar = false
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: Espacio.xl) {
-                    cabecera
-                    if !datos.isEmpty { tarjetaDatos }
-                    if let tituloAccion { zonaAccion(tituloAccion) }
-                }
-                .padding(.horizontal, Espacio.margen)
-                .padding(.top, Espacio.xs)
-                .padding(.bottom, Espacio.xl)
-                .frame(maxWidth: 576)
-                .frame(maxWidth: .infinity)
-            }
-            .background(Theme.fondo.ignoresSafeArea())
-            .navigationTitle(tipo)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Listo") { cerrar() }
-                        .fontWeight(.semibold)
-                }
-            }
-            .confirmationDialog("¿Borrar este movimiento?", isPresented: $confirmar, titleVisibility: .visible) {
-                Button("Borrar", role: .destructive) { ejecutar() }
-                Button("Cancelar", role: .cancel) {}
-            } message: {
-                Text("\(titulo) · \(Fmt.plata(monto)). No se puede deshacer.")
-            }
-        }
-        .presentationDetents([.medium, .large])
-    }
-
-    private var cabecera: some View {
-        VStack(spacing: Espacio.s) {
-            IconoCuadro(simbolo: simbolo, color: color, lado: 56)
-            Text(titulo)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Theme.texto)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-            CifraPlata(valor: monto, estilo: .titular, signo: esEntrada ? .entrada : .salida)
-            Insignia(texto: tipo, tono: esEntrada ? .positivo : .neutro)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, Espacio.s)
-        .accessibilityElement(children: .combine)
-    }
-
-    private var tarjetaDatos: some View {
-        VStack(spacing: 0) {
-            ForEach(Array(datos.enumerated()), id: \.element.id) { indice, dato in
-                if indice > 0 { SeparadorFila(sangria: Espacio.m) }
-                HStack(alignment: .firstTextBaseline, spacing: Espacio.s) {
-                    Text(dato.titulo)
-                        .foregroundStyle(Theme.gris)
-                    Spacer(minLength: Espacio.s)
-                    Text(dato.valor)
-                        .foregroundStyle(Theme.texto)
-                        .multilineTextAlignment(.trailing)
-                }
-                .font(.subheadline)
-                .padding(.horizontal, Espacio.m)
-                .padding(.vertical, Espacio.s)
-                .frame(minHeight: 48)
-                .accessibilityElement(children: .combine)
-            }
-        }
-        .panel(padding: 0)
-    }
-
-    private func zonaAccion(_ titulo: String) -> some View {
-        VStack(spacing: Espacio.xs) {
-            Button {
-                if destructiva {
-                    Haptics.warning()
-                    confirmar = true
-                } else {
-                    ejecutar()
-                }
-            } label: {
-                Label(titulo, systemImage: destructiva ? "trash" : "arrow.uturn.backward")
-            }
-            .buttonStyle(.secundario(destructiva ? Theme.rojo : Theme.acento, anchoCompleto: true))
-
-            if let notaAccion {
-                Text(notaAccion)
-                    .font(.footnote)
-                    .foregroundStyle(Theme.gris)
-                    .multilineTextAlignment(.center)
-            }
-        }
-    }
-
-    private func ejecutar() {
-        accion()
-        cerrar()
     }
 }
 

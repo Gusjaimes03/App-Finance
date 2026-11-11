@@ -6,6 +6,7 @@ struct HojaGasto: View {
 
     @EnvironmentObject private var store: FinanceStore
     @Environment(\.dismiss) private var cerrar
+    @Environment(\.ofrecerDeshacer) private var ofrecerDeshacer
 
     @State private var texto = ""
     @State private var categoriaID = ""
@@ -53,12 +54,14 @@ struct HojaGasto: View {
             }
             .confirmationDialog("¿Borrar este gasto?", isPresented: $confirmarBorrado, titleVisibility: .visible) {
                 Button("Borrar gasto", role: .destructive) {
-                    store.borrarGasto(gasto)
+                    let tienda = store
+                    tienda.borrarGasto(gasto)
+                    ofrecerDeshacer { tienda.restaurarGasto(gasto) }
                     cerrar()
                 }
                 Button("Cancelar", role: .cancel) {}
             } message: {
-                Text("\(Fmt.plata(gasto.monto)) en \(store.categoria(gasto.cat).nombre). No se puede deshacer.")
+                Text("\(Fmt.plata(gasto.monto)) en \(store.categoria(gasto.cat).nombre).")
             }
             .onAppear {
                 guard !cargado else { return }
@@ -202,7 +205,10 @@ struct HojaGasto: View {
         copia.metodo = metodo
         copia.nota = nota
         copia.fecha = fecha.inicioDeDia
-        store.actualizarGasto(copia)
+        let anterior = store.data.gastos.first(where: { $0.id == gasto.id }) ?? gasto
+        let tienda = store
+        tienda.actualizarGasto(copia)
+        ofrecerDeshacer { tienda.actualizarGasto(anterior) }
     }
 }
 

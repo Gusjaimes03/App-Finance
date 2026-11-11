@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Lo tuyo en plata: cajitas, lo que te deben y lo que debes (sección 2.5).
+/// Lo tuyo en plata (libre + cajitas), cajitas, lo que te deben y lo que debes.
 struct BalanceView: View {
     @EnvironmentObject private var store: FinanceStore
     @Environment(\.ofrecerDeshacer) private var ofrecerDeshacer
@@ -12,6 +12,7 @@ struct BalanceView: View {
     @State private var mostrarCajita = false
     @State private var quitandoCajita: Cajita?
     @State private var borrandoDeuda: Deuda?
+    @State private var edicion: EdicionDato?
 
     private var cajitasOrdenadas: [Cajita] {
         store.data.cajitas.sorted(by: { $0.orden < $1.orden })
@@ -49,6 +50,7 @@ struct BalanceView: View {
             .sheet(isPresented: $mostrarCajita) {
                 HojaNuevaCajitaBalance().environmentObject(store)
             }
+            .hojaEdicion($edicion)
             .confirmationDialog(
                 "¿Borrar la cajita \(quitandoCajita?.nombre ?? "")?",
                 isPresented: Binding(get: { quitandoCajita != nil }, set: { if !$0 { quitandoCajita = nil } }),
@@ -56,7 +58,9 @@ struct BalanceView: View {
             ) {
                 if let cajita = quitandoCajita {
                     Button("Borrar cajita", role: .destructive) {
-                        store.quitarCajita(cajita)
+                        let tienda = store
+                        tienda.quitarCajita(cajita)
+                        ofrecerDeshacer { tienda.restaurarCajita(cajita) }
                         quitandoCajita = nil
                     }
                 }
@@ -74,13 +78,19 @@ struct BalanceView: View {
         ) {
             if let deuda = borrandoDeuda {
                 Button("Borrar deuda", role: .destructive) {
-                    store.quitarDeuda(deuda)
+                    let tienda = store
+                    tienda.quitarDeuda(deuda)
+                    ofrecerDeshacer { tienda.restaurarDeuda(deuda) }
                     borrandoDeuda = nil
                 }
             }
             Button("Cancelar", role: .cancel) { borrandoDeuda = nil }
         } message: {
-            Text("Ya está pagada. Sus abonos siguen en tus movimientos.")
+            if let deuda = borrandoDeuda {
+                Text(deuda.pagada
+                     ? "Ya está pagada. Sus abonos siguen en tus movimientos."
+                     : "Todavía debes \(Fmt.plata(deuda.saldo)). Sus abonos siguen en tus movimientos.")
+            }
         }
     }
 
@@ -88,7 +98,6 @@ struct BalanceView: View {
 
     private var patrimonio: some View {
         let total = store.patrimonio
-        let bienes = store.valorDeBienes
         let libre = store.libre
 
         return TarjetaHero(espaciado: Espacio.s) {
@@ -98,13 +107,13 @@ struct BalanceView: View {
                     .foregroundStyle(Theme.gris)
                 Spacer(minLength: 0)
                 if total < 0 {
-                    Insignia(texto: "Debes más de lo que tienes", tono: .negativo)
+                    Insignia(texto: "En rojo", tono: .negativo)
                 }
             }
 
             CifraPlata(valor: total, estilo: .hero, signo: .automatico, color: .white)
 
-            Text("Tu plata libre, lo ahorrado y lo que te deben, menos lo que debes.")
+            Text("La plata que tienes hoy: tu plata libre más lo que hay en las cajitas.")
                 .font(.footnote)
                 .foregroundStyle(Theme.gris)
                 .fixedSize(horizontal: false, vertical: true)
@@ -136,21 +145,12 @@ struct BalanceView: View {
             }
             .padding(.top, Espacio.xxs)
 
-            Text(notaPatrimonio(bienes: bienes))
+            Text("Lo que te deben y lo que debes va aparte: no se suma porque no es plata que tengas.")
                 .font(.footnote)
                 .foregroundStyle(Color.white.opacity(0.6))
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, Espacio.xxs)
         }
-    }
-
-    private func notaPatrimonio(bienes: Decimal) -> String {
-        var partes: [String] = []
-        if bienes > 0 {
-            partes.append("Incluye \(Fmt.plata(bienes)) que valen tus compras a cuotas.")
-        }
-        partes.append("No cuenta la moto ni el ganado.")
-        return partes.joined(separator: " ")
     }
 
     // MARK: Cajitas
@@ -210,6 +210,7 @@ struct BalanceView: View {
             para: nombreDestino(de: cajita),
             alGuardar: { pedirGuardar(cajita) },
             alSacar: { pedirSacar(cajita) },
+            alEditar: { edicion = .cajita(cajita.id) },
             alBorrar: {
                 Haptics.warning()
                 quitandoCajita = cajita
@@ -282,7 +283,8 @@ struct BalanceView: View {
                         FilaCobroBalance(
                             cobro: cobro,
                             abonos: store.data.agenda.filter { $0.cobroId == cobro.id },
-                            alCobrar: { pedirCobro(cobro) }
+                            alCobrar: { pedirCobro(cobro) },
+                            alEditar: { edicion = .agenda(cobro.id) }
                         )
                     }
                 }
@@ -341,6 +343,7 @@ struct BalanceView: View {
                             deuda: deuda,
                             abonos: store.data.agenda.filter { $0.abono && $0.hecho && $0.deudaId == deuda.id },
                             alAbonar: { pedirAbono(deuda) },
+                            alEditar: { edicion = .deuda(deuda.id) },
                             alBorrar: {
                                 Haptics.warning()
                                 borrandoDeuda = deuda
@@ -378,6 +381,7 @@ private struct TarjetaCajitaBalance: View {
     var para: String?
     var alGuardar: () -> Void
     var alSacar: () -> Void
+    var alEditar: () -> Void
     var alBorrar: () -> Void
 
     private var estado: String {
@@ -403,6 +407,9 @@ private struct TarjetaCajitaBalance: View {
                     .lineLimit(2)
                 Spacer(minLength: 0)
                 MenuMas(etiqueta: "Más opciones de \(cajita.nombre)") {
+                    Button(action: alEditar) {
+                        Label("Editar cajita", systemImage: "pencil")
+                    }
                     Button(action: alSacar) {
                         Label("Sacar plata", systemImage: "arrow.uturn.up")
                     }
@@ -458,7 +465,12 @@ private struct TarjetaCajitaBalance: View {
         .padding(Espacio.m)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(FondoTarjeta())
+        .contentShape(Rectangle())
+        .onTapGesture(perform: alEditar)
         .contextMenu {
+            Button(action: alEditar) {
+                Label("Editar cajita", systemImage: "pencil")
+            }
             Button(action: alGuardar) {
                 Label("Guardar plata", systemImage: "plus")
             }
@@ -474,6 +486,7 @@ private struct TarjetaCajitaBalance: View {
         .accessibilityLabel("\(cajita.nombre): \(CifraPlata.textoAccesible(cajita.guardado, signo: .ninguno))"
                             + (cajita.meta > 0 ? " de \(CifraPlata.textoAccesible(cajita.meta, signo: .ninguno))" : "")
                             + ". \(estado)")
+        .accessibilityAction(named: "Editar", alEditar)
     }
 }
 
@@ -484,6 +497,7 @@ private struct FilaCobroBalance: View {
     let cobro: AgendaItem
     let abonos: [AgendaItem]
     var alCobrar: () -> Void
+    var alEditar: () -> Void
 
     private var original: Decimal { max(cobro.montoOriginal ?? cobro.monto, cobro.monto) }
     private var abonado: Decimal { max(0, original - cobro.monto) }
@@ -524,6 +538,9 @@ private struct FilaCobroBalance: View {
                 .layoutPriority(1)
             }
             .accessibilityElement(children: .combine)
+            .accessibilityAction(named: "Editar", alEditar)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: alEditar)
 
             if abonado > 0 {
                 VStack(alignment: .leading, spacing: 6) {
@@ -549,7 +566,7 @@ private struct FilaCobroBalance: View {
                     Insignia(texto: (vencido ? "Debía pagarte el " : "Te paga el ") + Fmt.diaYMes(fecha),
                              tono: vencido ? .negativo : .neutro,
                              simbolo: "calendar")
-                } else if let fechaTexto = cobro.fechaTexto, !fechaTexto.isEmpty {
+                } else if let fechaTexto = cobro.fechaTexto?.fechaSinTilde, !fechaTexto.isEmpty {
                     Insignia(texto: fechaTexto, tono: .neutro, simbolo: "calendar")
                 }
             }
@@ -559,6 +576,9 @@ private struct FilaCobroBalance: View {
         .contextMenu {
             Button(action: alCobrar) {
                 Label("Me pagó", systemImage: "checkmark.circle")
+            }
+            Button(action: alEditar) {
+                Label("Editar o borrar", systemImage: "pencil")
             }
         }
     }
@@ -571,6 +591,7 @@ private struct FilaDeudaBalance: View {
     let deuda: Deuda
     let abonos: [AgendaItem]
     var alAbonar: () -> Void
+    var alEditar: () -> Void
     var alBorrar: () -> Void
 
     private var ultimoAbono: AgendaItem? {
@@ -616,6 +637,9 @@ private struct FilaDeudaBalance: View {
                 }
             }
             .accessibilityElement(children: .combine)
+            .accessibilityAction(named: "Editar", alEditar)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: alEditar)
 
             VStack(alignment: .leading, spacing: 6) {
                 BarraProgreso(avance: deuda.avance,
@@ -646,11 +670,6 @@ private struct FilaDeudaBalance: View {
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Theme.verde)
                     Spacer(minLength: 0)
-                    MenuMas(etiqueta: "Más opciones de \(deuda.nombre)") {
-                        Button(role: .destructive, action: alBorrar) {
-                            Label("Borrar deuda", systemImage: "trash")
-                        }
-                    }
                 } else {
                     Button(action: alAbonar) {
                         Label("Abonar", systemImage: "arrow.down.circle")
@@ -659,20 +678,31 @@ private struct FilaDeudaBalance: View {
                     .accessibilityLabel("Abonar a \(deuda.nombre)")
                     Spacer(minLength: 0)
                 }
+                MenuMas(etiqueta: "Más opciones de \(deuda.nombre)") {
+                    menuDeuda
+                }
+                .padding(.trailing, -Espacio.xs)
             }
         }
         .padding(Espacio.m)
         .contentShape(Rectangle())
         .contextMenu {
-            if deuda.pagada {
-                Button(role: .destructive, action: alBorrar) {
-                    Label("Borrar deuda", systemImage: "trash")
-                }
-            } else {
-                Button(action: alAbonar) {
-                    Label("Abonar", systemImage: "arrow.down.circle")
-                }
+            menuDeuda
+        }
+    }
+
+    @ViewBuilder
+    private var menuDeuda: some View {
+        if !deuda.pagada {
+            Button(action: alAbonar) {
+                Label("Abonar", systemImage: "arrow.down.circle")
             }
+        }
+        Button(action: alEditar) {
+            Label("Editar deuda", systemImage: "pencil")
+        }
+        Button(role: .destructive, action: alBorrar) {
+            Label("Borrar deuda", systemImage: "trash")
         }
     }
 }

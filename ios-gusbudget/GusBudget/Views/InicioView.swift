@@ -12,6 +12,7 @@ struct InicioView: View {
 
     @State private var solicitud: SolicitudValor?
     @State private var mostrarExplicacion = false
+    @State private var edicion: EdicionDato?
     @State private var verTodosLosAvisos = false
 
     /// Máximo de filas de "Próximos 7 días" en Inicio; el resto está en Pagos.
@@ -53,6 +54,7 @@ struct InicioView: View {
             .sheet(isPresented: $mostrarExplicacion) {
                 HojaComoSeCalcula(resultado: resultado, explicacion: frase)
             }
+            .hojaEdicion($edicion)
         }
     }
 
@@ -159,7 +161,9 @@ struct InicioView: View {
             return "Tu plata libre ya está apartada para los pagos que vienen."
         }
         let dias = r.dias == 1 ? "1 día" : "\(r.dias) días"
-        if r.mandaPresupuesto { return "Según tu presupuesto del mes" }
+        if r.mandaPresupuesto {
+            return r.recorte > 0 ? "Tu cuota diaria, menos lo que gastaste de más" : "Tu cuota diaria del presupuesto"
+        }
         if let ingreso = r.proximoIngreso { return "Hasta que llegue \(ingreso.nombre) · \(dias)" }
         return "Hasta fin de mes · \(dias)"
     }
@@ -171,7 +175,10 @@ struct InicioView: View {
             return "Te pasaste del límite de hoy. Mañana vuelve a empezar."
         }
         if r.mandaPresupuesto {
-            return "Manda tu presupuesto del mes: es lo que queda del día a día repartido en los días que faltan."
+            if r.recorte > 0 {
+                return "Tu cuota diaria es \(Fmt.plata(r.cuotaDiaria)). Como antes gastaste \(Fmt.plata(r.excesoPendiente)) de más, ese exceso se reparte en los días que quedan del mes y hoy se te descuentan \(Fmt.plata(r.recorte))."
+            }
+            return "Tu cuota diaria es \(Fmt.plata(r.cuotaDiaria)): tu presupuesto del día a día del mes repartido en todos sus días. Si un día gastas de más, se descuenta de los días que quedan; si gastas de menos, eso queda ahorrado."
         }
         let destino = r.proximoIngreso.map { "hasta que llegue \($0.nombre)" } ?? "hasta que acabe el mes"
         let dias = r.dias == 1 ? "1 día" : "\(r.dias) días"
@@ -278,6 +285,8 @@ struct InicioView: View {
                         if indice > 0 { SeparadorFila(sangria: 56) }
                         FilaObligacion(obligacion: obligacion, alHacer: {
                             pedirValor(obligacion)
+                        }, alEditar: {
+                            edicion = EdicionDato.de(obligacion)
                         })
                         .padding(.horizontal, Espacio.m)
                         .padding(.vertical, Espacio.xxs)
@@ -472,7 +481,9 @@ private struct HojaComoSeCalcula: View {
                     .panel(padding: 0)
 
                     if resultado.mandaPresupuesto {
-                        Text("Hoy manda tu presupuesto del mes porque es más bajo que lo que te alcanza con tu plata.")
+                        Text(resultado.recorte > 0
+                             ? "Hoy manda tu presupuesto: cuota de \(Fmt.plata(resultado.cuotaDiaria)) menos \(Fmt.plata(resultado.recorte)) por lo que gastaste de más (te faltan por descontar \(Fmt.plata(resultado.excesoPendiente)))."
+                             : "Hoy manda tu presupuesto: tu cuota diaria de \(Fmt.plata(resultado.cuotaDiaria)) es más baja que lo que te alcanza con tu plata.")
                             .font(.footnote)
                             .foregroundStyle(Theme.gris)
                             .fixedSize(horizontal: false, vertical: true)
