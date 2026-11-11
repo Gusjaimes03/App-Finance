@@ -134,9 +134,9 @@ struct InicioView: View {
                 if !pagosCerca.isEmpty {
                     TituloSeccion(texto: "Pagos de los próximos 7 días")
                     ForEach(pagosCerca) { obligacion in
-                        FilaObligacion(obligacion: obligacion) {
+                        FilaObligacion(obligacion: obligacion, alHacer: {
                             solicitud = solicitudPara(obligacion, store: store)
-                        }
+                        })
                     }
                 }
 
@@ -144,9 +144,9 @@ struct InicioView: View {
                     if !pagosCerca.isEmpty { Divider() }
                     TituloSeccion(texto: "Te debe llegar")
                     ForEach(ingresosCerca) { obligacion in
-                        FilaObligacion(obligacion: obligacion) {
+                        FilaObligacion(obligacion: obligacion, alHacer: {
                             solicitud = solicitudPara(obligacion, store: store)
-                        }
+                        })
                     }
                 }
             }

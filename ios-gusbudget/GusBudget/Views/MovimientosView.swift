@@ -61,13 +61,13 @@ struct MovimientosView: View {
     // MARK: Datos
 
     private var movimientos: [Movimiento] {
-        var lista: [Movimiento] = store.gastos(enMes: mes).map { .gasto($0) }
+        var lista: [Movimiento] = store.gastos(enMes: mes).map { Movimiento.gasto($0) }
         lista += store.data.agenda
             .filter { $0.hecho && ($0.hechoFecha ?? $0.fecha ?? $0.creado).mismoMes(que: mes) }
-            .map { .agenda($0) }
+            .map { Movimiento.agenda($0) }
         lista += store.data.pagosFijos
             .filter { $0.fecha.mismoMes(que: mes) }
-            .map { .fijo($0, store.fijo($0.fijoId)?.nombre ?? "Gasto fijo") }
+            .map { Movimiento.fijo($0, store.fijo($0.fijoId)?.nombre ?? "Gasto fijo") }
         return lista.sorted { $0.fecha > $1.fecha }
     }
 

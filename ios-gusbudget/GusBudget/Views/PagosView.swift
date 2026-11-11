@@ -45,9 +45,9 @@ struct PagosView: View {
                             )
                             ForEach(grupo.lista) { obligacion in
                                 VStack(spacing: 6) {
-                                    FilaObligacion(obligacion: obligacion) {
+                                    FilaObligacion(obligacion: obligacion, alHacer: {
                                         solicitud = solicitudPara(obligacion, store: store)
-                                    }
+                                    })
                                     if obligacion.agendaId != nil {
                                         HStack {
                                             Spacer()
