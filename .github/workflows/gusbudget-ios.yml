@@ -1,0 +1,117 @@
+name: GusBudget iOS
+
+# Compila la app en un Mac de GitHub y deja un .ipa sin firmar como artefacto.
+# Sirve para dos cosas: comprobar que todo compila y poder instalarla con
+# AltStore/Sideloadly sin tener un Mac a mano.
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "ios-gusbudget/**"
+      - ".github/workflows/gusbudget-ios.yml"
+  workflow_dispatch:
+
+jobs:
+  construir:
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Versión de Xcode
+        run: xcodebuild -version
+
+      - name: Compilar sin firma
+        working-directory: ios-gusbudget
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project GusBudget.xcodeproj \
+            -scheme GusBudget \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Empaquetar el .ipa
+        working-directory: ios-gusbudget
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/GusBudget.app Payload/
+          zip -qry GusBudget-sin-firmar.ipa Payload
+          ls -lh GusBudget-sin-firmar.ipa
+
+      - name: Subir el .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: GusBudget-sin-firmar
+          path: ios-gusbudget/GusBudget-sin-firmar.ipa
+          retention-days: 30
+
+  capturas:
+    # Corre solo cuando se pide: escribe [capturas] en el mensaje del commit
+    # o lánzalo a mano desde la pestaña Actions.
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[capturas]')
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compilar para el simulador
+        working-directory: ios-gusbudget
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project GusBudget.xcodeproj \
+            -scheme GusBudget \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build-sim \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Tomar las capturas
+        working-directory: ios-gusbudget
+        run: |
+          set -e
+          UDID=$(/usr/bin/python3 tools/elegir_simulador.py)
+          echo "Simulador: $UDID"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+
+          APP="build-sim/Build/Products/Debug-iphonesimulator/GusBudget.app"
+          BUNDLE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist")
+          xcrun simctl install "$UDID" "$APP"
+
+          mkdir -p capturas
+          tomar() {
+            xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
+            xcrun simctl launch "$UDID" "$BUNDLE" --args -pestana "$1" -datosDeEjemplo 1 >/dev/null
+            sleep 5
+            xcrun simctl io "$UDID" screenshot "capturas/$2.png"
+            echo "  OK $2"
+          }
+
+          for pestana in inicio movimientos presupuesto pagos balance; do
+            tomar "$pestana" "$pestana"
+          done
+
+          xcrun simctl ui "$UDID" appearance dark
+          for pestana in inicio presupuesto; do
+            tomar "$pestana" "$pestana-oscuro"
+          done
+
+          ls -lh capturas
+
+      - name: Subir las capturas
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas
+          path: ios-gusbudget/capturas/
+          retention-days: 14
