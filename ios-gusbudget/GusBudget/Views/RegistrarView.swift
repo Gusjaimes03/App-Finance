@@ -11,6 +11,9 @@ struct RegistrarView: View {
         var color: Color { self == .gasto ? Theme.acento : Theme.verde }
     }
 
+    var tipoInicial: Tipo = .gasto
+    var alTerminar: (() -> Void)? = nil
+
     @State private var tipo: Tipo = .gasto
     @State private var paso = 1
     @State private var texto = ""
@@ -36,6 +39,7 @@ struct RegistrarView: View {
         .panel()
         .animation(.easeInOut(duration: 0.2), value: paso)
         .animation(.easeInOut(duration: 0.2), value: tipo)
+        .onAppear { tipo = tipoInicial }
     }
 
     // MARK: Encabezado
@@ -279,6 +283,7 @@ struct RegistrarView: View {
             store.agregarIngresoExtra(monto: monto, fuente: fuente, nota: nota, fecha: fecha)
         }
         reiniciar()
+        alTerminar?()
     }
 
     private func reiniciar() {

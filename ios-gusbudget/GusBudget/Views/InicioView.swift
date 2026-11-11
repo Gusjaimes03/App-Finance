@@ -2,8 +2,10 @@ import SwiftUI
 
 struct InicioView: View {
     @EnvironmentObject private var store: FinanceStore
+
     @State private var solicitud: SolicitudValor?
     @State private var mostrarAjustes = false
+    @State private var registro: RegistrarView.Tipo?
 
     private var resultado: ResultadoHoy { store.hoyPuedesGastar() }
     private var pendientes: [Obligacion] { store.obligaciones() }
@@ -19,16 +21,16 @@ struct InicioView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 14) {
+                VStack(spacing: 13) {
                     tarjetaHoy
+                    botones
                     avisos
-                    RegistrarView()
                     proximos
                     donaDelMes
                 }
                 .columna()
                 .padding(.horizontal, 16)
-                .padding(.bottom, 24)
+                .padding(.bottom, 96)
                 .frame(maxWidth: .infinity)
             }
             .background(Theme.fondo)
@@ -39,7 +41,7 @@ struct InicioView: View {
                     Button {
                         mostrarAjustes = true
                     } label: {
-                        Image(systemName: "gearshape.fill")
+                        Image(systemName: "gearshape")
                     }
                     .accessibilityLabel("Ajustes")
                 }
@@ -50,29 +52,39 @@ struct InicioView: View {
             .sheet(item: $solicitud) { peticion in
                 HojaValorReal(solicitud: peticion)
             }
+            .sheet(item: $registro) { tipo in
+                HojaRegistrar(tipo: tipo).environmentObject(store)
+            }
         }
     }
 
     // MARK: Tarjeta principal
 
     private var tarjetaHoy: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(resultado.disponible < 0 ? "Hoy te pasaste" : "Hoy puedes gastar")
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.white.opacity(0.85))
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(titulo)
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.8))
+                Spacer()
+                Text(Fmt.encabezadoDia(Date()))
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.55))
+            }
 
             Text(Fmt.plata(abs(resultado.disponible)))
-                .font(.system(size: 42, weight: .bold, design: .rounded))
+                .font(.system(size: 38, weight: .bold, design: .rounded))
                 .foregroundStyle(resultado.disponible < 0 ? Theme.rojo : Theme.sol)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
 
             Text(frase)
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.85))
+                .font(.caption2)
+                .foregroundStyle(.white.opacity(0.7))
+                .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
 
-            HStack(spacing: 8) {
+            HStack(spacing: 7) {
                 Mosaico(titulo: "Plata libre", valor: Fmt.plata(store.libre),
                         color: store.libre < 0 ? Theme.rojo : .white, sobreOscuro: true)
                 Mosaico(titulo: "En cajitas", valor: Fmt.plata(store.enCajitas),
@@ -81,25 +93,63 @@ struct InicioView: View {
                         color: .white, sobreOscuro: true)
             }
         }
-        .padding(18)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Theme.heroGradient)
         )
     }
 
+    private var titulo: String {
+        if store.libre < 0 { return "Estás en rojo" }
+        return resultado.disponible < 0 ? "Hoy te pasaste" : "Hoy puedes gastar"
+    }
+
     private var frase: String {
         let r = resultado
+        if store.libre < 0 {
+            return "Tu plata libre está en \(Fmt.plata(store.libre)). Revisa los pagos antes de seguir gastando."
+        }
         if r.disponible < 0 {
             return "Te pasaste del límite de hoy. Mañana vuelve a empezar."
         }
         if r.mandaPresupuesto {
-            return "Manda tu presupuesto del mes: es lo que queda del día a día repartido en los días que faltan."
+            return "Manda tu presupuesto: es lo que queda del día a día repartido en los días que faltan."
         }
-        let destino = r.proximoIngreso.map { "hasta que llegue \($0.nombre)" } ?? "hasta que acabe el mes"
         let dias = r.dias == 1 ? "1 día" : "\(r.dias) días"
-        return "Tienes \(Fmt.plata(r.libre)) libres, apartas \(Fmt.plata(r.pagosAntes)) para pagos y lo repartes en \(dias), \(destino)."
+        guard let proximo = r.proximoIngreso else {
+            return "Tus \(Fmt.plata(r.libre)) libres repartidos en \(dias), hasta que acabe el mes."
+        }
+        return "\(Fmt.plata(r.libre)) libres − \(Fmt.plata(r.pagosAntes)) de pagos, en \(dias) hasta \(proximo.nombre)."
+    }
+
+    // MARK: Botones de registro
+
+    private var botones: some View {
+        HStack(spacing: 10) {
+            Button {
+                registro = .gasto
+            } label: {
+                Label("Registrar gasto", systemImage: "minus.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 13)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.acento)
+
+            Button {
+                registro = .ingreso
+            } label: {
+                Label("Ingreso", systemImage: "plus.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.vertical, 13)
+                    .padding(.horizontal, 6)
+            }
+            .buttonStyle(.bordered)
+            .tint(Theme.verde)
+        }
     }
 
     // MARK: Avisos
@@ -108,20 +158,26 @@ struct InicioView: View {
     private var avisos: some View {
         let lista = store.avisos()
         if !lista.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(Array(lista.enumerated()), id: \.offset) { _, texto in
+            VStack(alignment: .leading, spacing: 7) {
+                ForEach(Array(lista.prefix(2).enumerated()), id: \.offset) { _, texto in
                     HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.caption)
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .font(.caption2)
                             .foregroundStyle(Theme.ambar)
+                            .padding(.top, 1)
                         Text(texto)
-                            .font(.caption)
-                            .foregroundStyle(Theme.texto)
+                            .font(.caption2)
+                            .foregroundStyle(Theme.gris)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
+                if lista.count > 2 {
+                    Text("y \(lista.count - 2) aviso(s) más")
+                        .font(.caption2)
+                        .foregroundStyle(Theme.gris)
+                }
             }
-            .panel(padding: 13)
+            .panel(padding: 12)
         }
     }
 
@@ -132,7 +188,7 @@ struct InicioView: View {
         if !pagosCerca.isEmpty || !ingresosCerca.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 if !pagosCerca.isEmpty {
-                    TituloSeccion(texto: "Pagos de los próximos 7 días")
+                    TituloSeccion(texto: "Pagos de estos días")
                     ForEach(pagosCerca) { obligacion in
                         FilaObligacion(obligacion: obligacion, alHacer: {
                             solicitud = solicitudPara(obligacion, store: store)
@@ -163,10 +219,10 @@ struct InicioView: View {
             let total = totales.reduce(Decimal.zero) { $0 + $1.total }
             let tramos = tramosDona(totales)
 
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 12) {
                 TituloSeccion(texto: "En qué se va tu plata", detalle: Fmt.mes(Date()))
-                HStack(spacing: 14) {
-                    Dona(tramos: tramos, total: total, lado: 124)
+                HStack(spacing: 12) {
+                    Dona(tramos: tramos, total: total, grosor: 18, lado: 110)
                     LeyendaDona(tramos: tramos, total: total)
                 }
             }
@@ -184,6 +240,32 @@ struct InicioView: View {
             lista.append(TramoDona(id: "otras", valor: otras.doble, color: Theme.gris, nombre: "Otras"))
         }
         return lista
+    }
+}
+
+/// El registro en 3 pasos, dentro de una hoja.
+struct HojaRegistrar: View {
+    let tipo: RegistrarView.Tipo
+
+    @EnvironmentObject private var store: FinanceStore
+    @Environment(\.dismiss) private var cerrar
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                RegistrarView(tipoInicial: tipo, alTerminar: { cerrar() })
+                    .environmentObject(store)
+                    .padding(16)
+            }
+            .background(Theme.fondo)
+            .navigationTitle(tipo == .gasto ? "Registrar gasto" : "Ingreso extra")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cerrar") { cerrar() }
+                }
+            }
+        }
     }
 }
 

@@ -22,7 +22,7 @@ struct BalanceView: View {
                 }
                 .columna()
                 .padding(.horizontal, 16)
-                .padding(.bottom, 24)
+                .padding(.bottom, 96)
                 .frame(maxWidth: .infinity)
             }
             .background(Theme.fondo)
@@ -137,7 +137,7 @@ struct BalanceView: View {
                         }
                         .font(.caption2.weight(.semibold))
                         .buttonStyle(.borderedProminent)
-                        .tint(cajita.color)
+                        .tint(Theme.acento)
                         .controlSize(.mini)
 
                         Button("Sacar") {

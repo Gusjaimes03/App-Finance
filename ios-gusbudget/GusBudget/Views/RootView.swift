@@ -31,11 +31,11 @@ struct RootView: View {
                     .tag(Pestana.inicio)
 
                 MovimientosView()
-                    .tabItem { Label("Movimientos", systemImage: "list.bullet") }
+                    .tabItem { Label("Movimientos", systemImage: "list.bullet.rectangle") }
                     .tag(Pestana.movimientos)
 
                 PresupuestoView()
-                    .tabItem { Label("Presupuesto", systemImage: "chart.pie.fill") }
+                    .tabItem { Label("Presupuesto", systemImage: "chart.pie") }
                     .tag(Pestana.presupuesto)
 
                 PagosView()
@@ -43,7 +43,7 @@ struct RootView: View {
                     .tag(Pestana.pagos)
 
                 BalanceView()
-                    .tabItem { Label("Balance", systemImage: "banknote.fill") }
+                    .tabItem { Label("Balance", systemImage: "creditcard") }
                     .tag(Pestana.balance)
             }
 

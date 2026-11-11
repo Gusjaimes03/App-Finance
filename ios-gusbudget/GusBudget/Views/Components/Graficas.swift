@@ -69,22 +69,31 @@ struct LeyendaDona: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             ForEach(tramos) { tramo in
-                HStack(spacing: 7) {
-                    Circle().fill(tramo.color).frame(width: 8, height: 8)
-                    Text(tramo.nombre)
-                        .font(.caption)
-                        .foregroundStyle(Theme.texto)
-                        .lineLimit(1)
-                    Spacer(minLength: 4)
-                    Text(Fmt.plata(Decimal(tramo.valor)))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Theme.texto)
+                HStack(alignment: .top, spacing: 7) {
+                    Circle()
+                        .fill(tramo.color)
+                        .frame(width: 8, height: 8)
+                        .padding(.top, 5)
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(tramo.nombre)
+                            .font(.caption)
+                            .foregroundStyle(Theme.texto)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        HStack(spacing: 5) {
+                            Text(Fmt.plata(Decimal(tramo.valor)))
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Theme.texto)
+                            Text(Fmt.porcentaje(total > 0 ? tramo.valor / total.doble : 0))
+                                .font(.caption2)
+                                .foregroundStyle(Theme.gris)
+                        }
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
-                    Text(Fmt.porcentaje(total > 0 ? tramo.valor / total.doble : 0))
-                        .font(.caption2)
-                        .foregroundStyle(Theme.gris)
-                        .frame(width: 38, alignment: .trailing)
+                    }
+                    Spacer(minLength: 0)
                 }
             }
         }

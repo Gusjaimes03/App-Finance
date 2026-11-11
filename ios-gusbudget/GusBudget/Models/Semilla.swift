@@ -230,7 +230,7 @@ extension Semilla {
                 simbolo: "building.2.fill"
             ),
             AgendaItem(
-                tipo: .pago, nombre: "Matrícula del semestre", monto: 489_000,
+                tipo: .pago, nombre: "Matrícula del semestre", monto: 189_000,
                 fecha: dia(14), simbolo: "graduationcap.fill"
             ),
             AgendaItem(
@@ -256,9 +256,9 @@ extension Semilla {
         datos.cajitas = [
             Cajita(nombre: "Arriendo de noviembre", meta: 1_000_000, guardado: 650_000,
                    para: "arriendo", colorHex: "2c56e0", orden: 0),
-            Cajita(nombre: "Colchón enero y febrero", meta: 4_400_000, guardado: 300_000,
+            Cajita(nombre: "Colchón enero y febrero", meta: 4_400_000, guardado: 150_000,
                    colorHex: "0f766e", orden: 1, nota: "Esos meses no hay Comfacasanare"),
-            Cajita(nombre: "SOAT del carro (marzo)", meta: 1_121_400, guardado: 1_121_400,
+            Cajita(nombre: "SOAT del carro (marzo)", meta: 1_121_400, guardado: 200_000,
                    colorHex: "c2410c", orden: 2)
         ]
 
